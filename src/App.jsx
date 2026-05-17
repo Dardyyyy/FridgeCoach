@@ -1,36 +1,52 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
-const FOOD_IMAGES = {
-  eggs:     "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=400&q=80",
-  bowl:     "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80",
-  wrap:     "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&q=80",
-  shake:    "https://images.unsplash.com/photo-1638176066959-c42f4a7d1c1a?w=400&q=80",
-  salmon:   "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&q=80",
-  mexican:  "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&q=80",
-  stirfry:  "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&q=80",
-  skyr:     "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&q=80",
-  rice:     "https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6?w=400&q=80",
-  pasta:    "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&q=80",
-  chicken:  "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400&q=80",
-  pancakes: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&q=80",
-  default:  "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400&q=80",
-};
+const FALLBACK_IMG = "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400&q=80";
+const imageCache = {};
 
-function getImage(name="", tag="") {
-  const n = (name+tag).toLowerCase();
-  if(n.includes("omelette")||n.includes("ei")||n.includes("türk")||n.includes("cilbir")) return FOOD_IMAGES.eggs;
-  if(n.includes("pancake")) return FOOD_IMAGES.pancakes;
-  if(n.includes("bowl")&&(n.includes("chicken")||n.includes("hähnchen")||n.includes("power"))) return FOOD_IMAGES.bowl;
-  if(n.includes("wrap")||n.includes("tuna")||n.includes("thun")) return FOOD_IMAGES.wrap;
-  if(n.includes("shake")||n.includes("smoothie")) return FOOD_IMAGES.shake;
-  if(n.includes("lachs")||n.includes("salmon")) return FOOD_IMAGES.salmon;
-  if(n.includes("mexik")||n.includes("hack")||n.includes("bowl")) return FOOD_IMAGES.mexican;
-  if(n.includes("garnelen")||n.includes("thai")||n.includes("stir")) return FOOD_IMAGES.stirfry;
-  if(n.includes("skyr")||n.includes("beeren")||n.includes("frueh")) return FOOD_IMAGES.skyr;
-  if(n.includes("reis")||n.includes("brei")||n.includes("post")) return FOOD_IMAGES.rice;
-  if(n.includes("pasta")||n.includes("spinat")) return FOOD_IMAGES.pasta;
-  if(n.includes("souvlaki")||n.includes("pita")||n.includes("hähnchen")) return FOOD_IMAGES.chicken;
-  return FOOD_IMAGES.default;
+// Translate German food names to English for better search results
+function toEnglishQuery(name="", tag="") {
+  const n = (name+" "+tag).toLowerCase();
+  if(n.includes("omelette")||n.includes("rührei")) return "protein omelette eggs fitness";
+  if(n.includes("pancake")) return "protein pancakes healthy breakfast";
+  if(n.includes("power bowl")||n.includes("chicken bowl")) return "chicken rice bowl healthy";
+  if(n.includes("wrap")||n.includes("thun")||n.includes("tuna")) return "tuna wrap healthy lunch";
+  if(n.includes("shake")||n.includes("smoothie")) return "green protein smoothie fitness";
+  if(n.includes("lachs")||n.includes("salmon")) return "grilled salmon healthy food";
+  if(n.includes("mexik")||n.includes("hack bowl")||n.includes("burrito")) return "mexican bowl healthy food";
+  if(n.includes("garnelen")||n.includes("thai")||n.includes("stir")) return "shrimp stir fry asian";
+  if(n.includes("skyr")||n.includes("beeren")||n.includes("joghurt bowl")) return "yogurt berry bowl breakfast";
+  if(n.includes("reisbrei")||n.includes("porridge")) return "rice porridge healthy breakfast";
+  if(n.includes("pasta")||n.includes("nudel")) return "chicken spinach pasta healthy";
+  if(n.includes("souvlaki")||n.includes("pita")||n.includes("gyros")) return "chicken souvlaki greek food";
+  if(n.includes("tofu")) return "tofu bowl vegan healthy";
+  if(n.includes("türk")||n.includes("cilbir")||n.includes("eier")) return "poached eggs yogurt turkish";
+  if(n.includes("reisbrei")||n.includes("brei")) return "rice pudding protein bowl";
+  if(n.includes("beef")||n.includes("rind")) return "beef rice bowl asian";
+  if(n.includes("hummus")) return "hummus wrap healthy lunch";
+  // Generic fallback based on tag
+  if(n.includes("frueh")||n.includes("breakfast")) return "healthy breakfast fitness food";
+  if(n.includes("mittag")||n.includes("lunch")) return "healthy lunch meal prep";
+  if(n.includes("abend")||n.includes("dinner")) return "healthy dinner protein meal";
+  if(n.includes("post-workout")||n.includes("workout")) return "post workout meal healthy";
+  return name.split(" ").slice(0,3).join(" ") + " healthy food";
+}
+
+async function fetchUnsplashImage(query) {
+  if(imageCache[query]) return imageCache[query];
+  try {
+    const url = "/api/unsplash?query=" + encodeURIComponent(query);
+    const res = await fetch(url);
+    const data = await res.json();
+    const results = data.results;
+    if(results && results.length > 0) {
+      // Pick a random one from top 5 for variety
+      const pick = results[Math.floor(Math.random() * Math.min(3, results.length))];
+      const imgUrl = pick.urls.regular + "&w=600&q=80";
+      imageCache[query] = imgUrl;
+      return imgUrl;
+    }
+  } catch(e) { console.warn("Unsplash fetch failed:", e); }
+  return FALLBACK_IMG;
 }
 
 const FIXED_RECIPES = [
@@ -188,10 +204,15 @@ function parseRecipe(raw) {
 
 function RecipeView({r}) {
   const [checked,setChecked]=useState({});
+  const [heroImg,setHeroImg]=useState(FALLBACK_IMG);
   const list=r.shopping?.length?r.shopping:r.ingredients;
   const toggle=i=>setChecked(p=>({...p,[i]:!p[i]}));
   const done=Object.values(checked).filter(Boolean).length;
-  const heroImg=getImage(r.name,r.tag||'');
+  
+  useEffect(()=>{
+    const query=toEnglishQuery(r.name,r.tag||"");
+    fetchUnsplashImage(query).then(url=>setHeroImg(url));
+  },[r.name]);
   return (
     <>
       <div className="recipe-card">
@@ -234,7 +255,46 @@ function RecipeView({r}) {
   );
 }
 
-export default function App() {
+export default function RecipeTile({r, isOn, onClick}) {
+  const [tileImg,setTileImg]=useState(FALLBACK_IMG);
+  useEffect(()=>{
+    const query=toEnglishQuery(r.name,r.tag||"");
+    fetchUnsplashImage(query).then(url=>setTileImg(url));
+  },[r.name]);
+  return(
+    <div className={`tile${isOn?' on':''}`} onClick={onClick}>
+      <img className="tile-img" src={tileImg} alt={r.name} loading="lazy"/>
+      <div className="tile-body">
+        <div className="tile-name">{r.name}</div>
+        <div className="tile-meta">⏱ {r.time} · 💪 {r.macros?.prot||r.protein}g</div>
+        <div className="tile-tag">{r.tag}</div>
+      </div>
+    </div>
+  );
+}
+
+function AiRow({r, isOn, onClick}) {
+  const [rowImg,setRowImg]=useState(FALLBACK_IMG);
+  useEffect(()=>{
+    const query=toEnglishQuery(r.name,r.tag||"");
+    fetchUnsplashImage(query).then(url=>setRowImg(url));
+  },[r.name]);
+  return(
+    <div className={`ai-row${isOn?' on':''}`} onClick={onClick}>
+      <div className="ai-row-inner">
+        <img className="ai-row-img" src={rowImg} alt={r.name} loading="lazy"/>
+        <div className="ai-row-info">
+          <div className="ai-name">{r.emoji||'🥗'} {r.name}</div>
+          <div className="ai-sub">⏱ {r.time} · {r.tag}</div>
+          <div className="ai-prot">💪 {r.macros.prot}g Protein · {r.macros.cal} kcal</div>
+        </div>
+        <span className="chevron">▼</span>
+      </div>
+    </div>
+  );
+}
+
+function App() {
   const [tab,setTab]=useState('scan');
   const [img,setImg]=useState(null);
   const [b64,setB64]=useState(null);
@@ -336,14 +396,7 @@ export default function App() {
             <div className="section-label">Klassiker</div>
             <div className="grid2">
               {FIXED_RECIPES.map((r,i)=>(
-                <div key={r.id} className={`tile${selFixed===i?' on':''}`} onClick={()=>{setSelFixed(selFixed===i?null:i);setSelAi(null)}}>
-                  <img className="tile-img" src={getImage(r.name,r.tag)} alt={r.name} loading="lazy"/>
-                  <div className="tile-body">
-                    <div className="tile-name">{r.name}</div>
-                    <div className="tile-meta">⏱ {r.time} · 💪 {r.macros.prot}g</div>
-                    <div className="tile-tag">{r.tag}</div>
-                  </div>
-                </div>
+                <RecipeTile key={r.id} r={r} isOn={selFixed===i} onClick={()=>{setSelFixed(selFixed===i?null:i);setSelAi(null)}}/>
               ))}
             </div>
             {selFixed!==null&&selAi===null&&<RecipeView r={FIXED_RECIPES[selFixed]}/>}
@@ -356,17 +409,7 @@ export default function App() {
               {aiRecipes.length>0&&(
                 <div className="ai-list">
                   {aiRecipes.map((r,i)=>(
-                    <div key={i} className={`ai-row${selAi===i?' on':''}`} onClick={()=>{setSelAi(selAi===i?null:i);setSelFixed(null)}}>
-                      <div className="ai-row-inner">
-                        <img className="ai-row-img" src={getImage(r.name,r.tag)} alt={r.name} loading="lazy"/>
-                        <div className="ai-row-info">
-                          <div className="ai-name">{r.emoji||'🥗'} {r.name}</div>
-                          <div className="ai-sub">⏱ {r.time} · {r.tag}</div>
-                          <div className="ai-prot">💪 {r.macros.prot}g Protein · {r.macros.cal} kcal</div>
-                        </div>
-                        <span className="chevron">▼</span>
-                      </div>
-                    </div>
+                    <AiRow key={i} r={r} isOn={selAi===i} onClick={()=>{setSelAi(selAi===i?null:i);setSelFixed(null)}}/>
                   ))}
                 </div>
               )}

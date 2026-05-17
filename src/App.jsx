@@ -256,26 +256,46 @@ function parseRecipe(raw) {
   return { name: name||'Fitness Rezept', ingredients: ing, steps, tip: tip.trim(), shopping, time, difficulty: diff, macros: parseMacros(raw) };
 }
 
+// ── Rewe Produktdatenbank ─────────────────────────────────────────────
+const REWE_DB = {
+  "eier":        [{name:"Bio Eier 10 Stück",brand:"REWE Bio",price:"2,49 €",unit:"10 Stk",emoji:"🥚"},{name:"Freilandeier 6 Stück",brand:"Ja!",price:"1,19 €",unit:"6 Stk",emoji:"🥚"},{name:"Eier M 10 Stück",brand:"REWE",price:"1,79 €",unit:"10 Stk",emoji:"🥚"}],
+  "hühnerbrust": [{name:"Hähnchenbrustfilet",brand:"REWE",price:"4,99 €",unit:"500g",emoji:"🍗"},{name:"Bio Hähnchenbrustfilet",brand:"REWE Bio",price:"6,49 €",unit:"400g",emoji:"🍗"},{name:"Hähnchenbrust natur",brand:"Wiesenhof",price:"3,99 €",unit:"400g",emoji:"🍗"}],
+  "hähnchen":    [{name:"Hähnchenbrustfilet",brand:"REWE",price:"4,99 €",unit:"500g",emoji:"🍗"},{name:"Bio Hähnchenbrustfilet",brand:"REWE Bio",price:"6,49 €",unit:"400g",emoji:"🍗"},{name:"Hähnchenschenkel",brand:"REWE",price:"3,49 €",unit:"1kg",emoji:"🍗"}],
+  "lachs":       [{name:"Lachsfilet",brand:"REWE",price:"3,99 €",unit:"200g",emoji:"🐟"},{name:"Bio Lachs",brand:"REWE Bio",price:"5,99 €",unit:"200g",emoji:"🐟"},{name:"Räucherlachs",brand:"Forsthaus Rungis",price:"2,49 €",unit:"100g",emoji:"🐟"}],
+  "thunfisch":   [{name:"Thunfisch in Wasser",brand:"Nixe",price:"0,99 €",unit:"185g",emoji:"🐟"},{name:"Thunfisch natur",brand:"REWE",price:"1,29 €",unit:"185g",emoji:"🐟"},{name:"Bio Thunfisch",brand:"followfish",price:"2,49 €",unit:"185g",emoji:"🐟"}],
+  "quinoa":      [{name:"Quinoa weiß",brand:"REWE Bio",price:"2,99 €",unit:"400g",emoji:"🌾"},{name:"Quinoa",brand:"Alnatura",price:"3,49 €",unit:"500g",emoji:"🌾"},{name:"Quinoa Trio",brand:"REWE Bio",price:"3,29 €",unit:"400g",emoji:"🌾"}],
+  "avocado":     [{name:"Avocado reif",brand:"REWE",price:"1,29 €",unit:"Stück",emoji:"🥑"},{name:"Bio Avocado",brand:"REWE Bio",price:"1,79 €",unit:"Stück",emoji:"🥑"},{name:"Avocado 2er Pack",brand:"REWE",price:"2,29 €",unit:"2 Stk",emoji:"🥑"}],
+  "spinat":      [{name:"Babyspinat",brand:"REWE",price:"1,49 €",unit:"150g",emoji:"🥬"},{name:"Bio Babyspinat",brand:"REWE Bio",price:"1,99 €",unit:"150g",emoji:"🥬"},{name:"Blattspinat TK",brand:"Iglo",price:"1,29 €",unit:"750g",emoji:"🥬"}],
+  "joghurt":     [{name:"Magerjoghurt",brand:"REWE",price:"0,59 €",unit:"500g",emoji:"🥛"},{name:"Griechischer Joghurt",brand:"Fage",price:"1,99 €",unit:"500g",emoji:"🥛"},{name:"Bio Joghurt",brand:"REWE Bio",price:"0,99 €",unit:"500g",emoji:"🥛"}],
+  "skyr":        [{name:"Skyr Natur",brand:"Arla",price:"1,49 €",unit:"500g",emoji:"🥛"},{name:"Isländischer Skyr",brand:"REWE",price:"1,29 €",unit:"500g",emoji:"🥛"},{name:"Bio Skyr",brand:"Siggi's",price:"2,49 €",unit:"450g",emoji:"🥛"}],
+  "reis":        [{name:"Basmati Reis",brand:"REWE",price:"1,49 €",unit:"1kg",emoji:"🍚"},{name:"Bio Basmati",brand:"REWE Bio",price:"2,29 €",unit:"1kg",emoji:"🍚"},{name:"Jasmin Reis",brand:"Ja!",price:"1,29 €",unit:"1kg",emoji:"🍚"}],
+  "pasta":       [{name:"Vollkorn Penne",brand:"REWE",price:"0,89 €",unit:"500g",emoji:"🍝"},{name:"Bio Vollkorn Spaghetti",brand:"Alnatura",price:"1,49 €",unit:"500g",emoji:"🍝"},{name:"Penne Rigate",brand:"Barilla",price:"1,19 €",unit:"500g",emoji:"🍝"}],
+  "banane":      [{name:"Bananen",brand:"REWE",price:"1,49 €",unit:"~1kg",emoji:"🍌"},{name:"Bio Bananen",brand:"REWE Bio",price:"2,29 €",unit:"~1kg",emoji:"🍌"},{name:"Fairtrade Bananen",brand:"REWE",price:"1,79 €",unit:"~1kg",emoji:"🍌"}],
+  "mandelmilch": [{name:"Mandelmilch ungesüßt",brand:"Alpro",price:"1,99 €",unit:"1L",emoji:"🥛"},{name:"Mandelmilch",brand:"REWE Bio",price:"1,79 €",unit:"1L",emoji:"🥛"},{name:"Mandel Drink",brand:"Oatly",price:"2,29 €",unit:"1L",emoji:"🥛"}],
+  "erdnussbutter":[{name:"Erdnussmus",brand:"Alnatura",price:"2,99 €",unit:"500g",emoji:"🥜"},{name:"Erdnussbutter crunchy",brand:"Skippy",price:"3,49 €",unit:"454g",emoji:"🥜"},{name:"Bio Erdnussmus",brand:"REWE Bio",price:"2,49 €",unit:"500g",emoji:"🥜"}],
+  "fetakäse":    [{name:"Feta",brand:"REWE",price:"1,49 €",unit:"200g",emoji:"🧀"},{name:"Bio Feta",brand:"Andechser",price:"2,29 €",unit:"200g",emoji:"🧀"},{name:"Griechischer Feta",brand:"Dodoni",price:"2,49 €",unit:"200g",emoji:"🧀"}],
+  "hüttenkäse":  [{name:"Hüttenkäse",brand:"REWE",price:"0,99 €",unit:"200g",emoji:"🧀"},{name:"Hüttenkäse",brand:"Exquisa",price:"1,29 €",unit:"200g",emoji:"🧀"},{name:"Bio Hüttenkäse",brand:"REWE Bio",price:"1,49 €",unit:"200g",emoji:"🧀"}],
+  "magerquark":  [{name:"Magerquark",brand:"REWE",price:"0,79 €",unit:"500g",emoji:"🧀"},{name:"Magerquark",brand:"Milbona",price:"0,69 €",unit:"500g",emoji:"🧀"},{name:"Bio Magerquark",brand:"REWE Bio",price:"1,19 €",unit:"500g",emoji:"🧀"}],
+  "garnelen":    [{name:"Garnelen TK",brand:"REWE",price:"4,99 €",unit:"500g",emoji:"🦐"},{name:"Bio Garnelen",brand:"followfish",price:"6,99 €",unit:"300g",emoji:"🦐"},{name:"Riesengarnelen",brand:"REWE",price:"5,49 €",unit:"400g",emoji:"🦐"}],
+  "rinderhack":  [{name:"Rinderhackfleisch",brand:"REWE",price:"3,99 €",unit:"500g",emoji:"🥩"},{name:"Bio Rinderhack",brand:"REWE Bio",price:"5,99 €",unit:"400g",emoji:"🥩"},{name:"Hackfleisch gemischt",brand:"REWE",price:"2,99 €",unit:"500g",emoji:"🥩"}],
+  "default":     [{name:"Bei Rewe suchen",brand:"Rewe Lieferservice",price:"ab 0,99 €",unit:"",emoji:"🛒"}],
+};
+
+function getReweProducts(item) {
+  const q = item.toLowerCase().replace(/\d+g|\d+ml|\d+x|\d+\s/g, '').trim();
+  for (const [key, products] of Object.entries(REWE_DB)) {
+    if (q.includes(key) || key.includes(q.split(' ')[0])) return products;
+  }
+  return REWE_DB.default;
+}
+
 // ── ReweSheet ─────────────────────────────────────────────────────────
 function ReweSheet({ item, onClose }) {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
   const query = item.replace(/\d+g|\d+ml|\d+x/g, '').replace(/\d+\s/g, '').trim();
-
-  useEffect(() => {
-    fetch('/api/rewe?query=' + encodeURIComponent(query))
-      .then(r => r.json())
-      .then(data => { setProducts(data.products || []); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, [query]);
+  const products = getReweProducts(item);
 
   const openRewe = (productName) => {
-    const q = productName || query;
-    window.open('https://shop.rewe.de/suche/?search=' + encodeURIComponent(q), '_blank');
-  };
-
-  const openReweAll = () => {
-    window.open('https://shop.rewe.de/suche/?search=' + encodeURIComponent(query), '_blank');
+    window.open('https://shop.rewe.de/suche/?search=' + encodeURIComponent(productName || query), '_blank');
   };
 
   return (
@@ -286,23 +306,22 @@ function ReweSheet({ item, onClose }) {
           <div className="rewe-sheet-title">🔴 {query}</div>
           <button className="rewe-sheet-close" onClick={onClose}>✕</button>
         </div>
-        <div className="rewe-sheet-sub">Produkte bei Rewe · Preis inkl. Lieferung</div>
-        {loading && <div className="rewe-loading">Preise werden geladen…</div>}
-        {!loading && products.map((p, i) => (
+        <div className="rewe-sheet-sub">Preisvergleich · verschiedene Hersteller</div>
+        {products.map((p, i) => (
           <div key={i} className="rewe-product" onClick={() => openRewe(p.name)}>
-            <div className="rewe-product-img">{p.img ? <img src={p.img} alt={p.name} style={{width:'100%',height:'100%',borderRadius:10,objectFit:'cover'}} /> : '🛒'}</div>
+            <div className="rewe-product-img">{p.emoji}</div>
             <div className="rewe-product-info">
               <div className="rewe-product-name">{p.name}</div>
-              <div className="rewe-product-brand">{p.brand} {p.unit && '· ' + p.unit}</div>
+              <div className="rewe-product-brand">{p.brand}{p.unit ? ' · ' + p.unit : ''}</div>
             </div>
             <div style={{textAlign:'right'}}>
-              <div className="rewe-product-price">{p.priceFormatted || '–'}</div>
+              <div className="rewe-product-price">{p.price}</div>
               <div className="rewe-product-unit">→ Rewe</div>
             </div>
           </div>
         ))}
-        <button className="rewe-order-btn" onClick={openReweAll}>
-          ALLE BEI REWE ANSEHEN
+        <button className="rewe-order-btn" onClick={() => openRewe(query)}>
+          BEI REWE KAUFEN
         </button>
       </div>
     </div>

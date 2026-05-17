@@ -848,19 +848,15 @@ function FoodSearch({ onAdd, onClose }) {
 
 // ── TrackerTab ────────────────────────────────────────────────────────
 const DAYS = ['Mo','Di','Mi','Do','Fr','Sa','So'];
-function TrackerTab() {
+function TrackerTab({ weekData, setWeekData, activities, setActivities }) {
   const today = new Date().getDay();
   const todayIdx = today === 0 ? 6 : today - 1;
   const [selDay, setSelDay] = useState(todayIdx);
   const [goal, setGoal] = useState(2200);
-  const [weekData, setWeekData] = useState(() => {
-    const d = {};
-    DAYS.forEach((_,i) => { d[i] = []; });
-    return d;
-  });
+  // weekData & activities come from App props
   const [showAdd, setShowAdd] = useState(false);
   const [showActivity, setShowActivity] = useState(false);
-  const [activities, setActivities] = useState(() => { const d = {}; DAYS.forEach((_,i)=>{d[i]=[];}); return d; });
+
   const [burnItem, setBurnItem] = useState(null);
 
   const meals = weekData[selDay] || [];
@@ -1011,12 +1007,25 @@ export default function App() {
   const fileRef = useRef();
   const camRef = useRef();
 
-  // Add recipe to tracker
-  const [trackerMeals, setTrackerMeals] = useState({});
+  // Shared tracker state — lifted up so RecipeView can write to it
+  const [weekData, setWeekData] = useState(() => { const d={}; [0,1,2,3,4,5,6].forEach(i=>{d[i]=[];}); return d; });
+  const [activities, setActivities] = useState(() => { const d={}; [0,1,2,3,4,5,6].forEach(i=>{d[i]=[];}); return d; });
+
   const addToTracker = (r) => {
     const today = new Date().getDay();
     const idx = today === 0 ? 6 : today - 1;
-    alert(`"${r.name}" wurde zum heutigen Tracker hinzugefügt (${r.macros.cal} kcal)`);
+    const meal = {
+      id: Date.now(),
+      name: r.name,
+      emoji: r.emoji || '🍽',
+      cal: Number(r.macros.cal) || 0,
+      prot: Number(r.macros.prot) || 0,
+      carbs: Number(r.macros.carbs) || 0,
+      fat: Number(r.macros.fat) || 0,
+      time: new Date().toLocaleTimeString('de', {hour:'2-digit', minute:'2-digit'}),
+    };
+    setWeekData(prev => ({ ...prev, [idx]: [...(prev[idx]||[]), meal] }));
+    setTab('tracker'); // switch to tracker tab
   };
 
   const loadFile = f => {
@@ -1185,7 +1194,7 @@ Schwierigkeit: Einfach/Mittel/Schwer
         )}
 
         {tab==='cart' && <CartTab cart={cart} setCart={setCart} />}
-        {tab==='tracker' && <TrackerTab />}
+        {tab==='tracker' && <TrackerTab weekData={weekData} setWeekData={setWeekData} activities={activities} setActivities={setActivities} />}
       </div>
     </>
   );

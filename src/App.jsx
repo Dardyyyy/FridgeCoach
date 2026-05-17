@@ -184,7 +184,7 @@ body{background:#050505;color:#f0f0f0;font-family:'Inter',sans-serif;min-height:
 .rbody{padding:18px}
 .lbl{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:#333;font-weight:700;margin-bottom:10px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
-.chip{background:#111;border:1px solid #1e1e1e;border-radius:20px;padding:5px 11px;font-size:12px;color:#666}
+.chip{background:#0a1a0f;border:1px solid #00ff8730;border-radius:20px;padding:5px 11px;font-size:12px;color:#00ff87}
 .srow{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start}
 .snum{width:26px;height:26px;background:#0a1a0f;border:1px solid #00ff8330;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#00ff87;flex-shrink:0;margin-top:1px}
 .stxt{font-size:13px;color:#777;line-height:1.6}
@@ -344,24 +344,28 @@ function parseMacros(t) {
 }
 function parseRecipe(raw) {
   const lines=raw.split('\n').map(l=>l.trim()).filter(Boolean);
-  let name='',ing=[],steps=[],tip='',shopping=[],time='~20 Min',diff='Einfach',mode=null;
+  let name='',ing=[],steps=[],tip='',shopping=[],fridge=[],time='~20 Min',diff='Einfach',mode=null;
   for(const l of lines){
     const lo=l.toLowerCase();
-    if(/^#+/.test(l)){const cl=l.replace(/^#+\s*/,'');if(!name&&cl.length<70&&!lo.includes('zutat')&&!lo.includes('zubereitung')&&!lo.includes('einkauf')&&!lo.includes('tipp')){name=cl;continue;}}
+    if(/^#+/.test(l)){const cl=l.replace(/^#+\s*/,'');if(!name&&cl.length<70&&!lo.includes('zutat')&&!lo.includes('zubereitung')&&!lo.includes('einkauf')&&!lo.includes('tipp')&&!lo.includes('erkannt')){name=cl;continue;}}
+    if(lo.includes('erkannte zutaten')||lo.includes('im kühlschrank')){mode='fridge';continue;}
     if(lo.includes('einkauf')){mode='shop';continue;}
-    if(lo.includes('zutat')){mode='ing';continue;}
+    if(lo.includes('zutaten für')||lo.includes('zutaten (für')){mode='ing';continue;}
     if(lo.includes('zubereitung')||lo.includes('schritt')){mode='steps';continue;}
     if(lo.includes('tipp')){mode='tip';continue;}
     if(lo.match(/zeit[:\s]/)){time=l.replace(/.*?:/,'').trim();continue;}
     if(lo.match(/schwierig/)){diff=l.replace(/.*?:/,'').trim();continue;}
     if(!name&&l.length<70&&!/^[-*•\d]/.test(l)){name=l;continue;}
     const cl=l.replace(/^[-*•]\s*/,'').replace(/^\d+[.)]\s*/,'');
-    if(mode==='ing')ing.push(cl);
+    if(mode==='fridge')fridge.push(cl);
+    else if(mode==='ing')ing.push(cl);
     else if(mode==='shop')shopping.push(cl);
     else if(mode==='steps')steps.push(cl);
     else if(mode==='tip')tip+=' '+cl;
   }
-  return{name:name||'Fitness Rezept',ingredients:ing,steps,tip:tip.trim(),shopping,time,difficulty:diff,macros:parseMacros(raw)};
+  // fallback: use fridge list as ingredients if ing is empty
+  if(ing.length===0&&fridge.length>0) ing=fridge;
+  return{name:name||'Fitness Rezept',ingredients:ing,fridge,steps,tip:tip.trim(),shopping,time,difficulty:diff,macros:parseMacros(raw)};
 }
 
 // ── PriceSheet ────────────────────────────────────────────────────────
@@ -434,11 +438,29 @@ function RecipeView({ r, onAddToTracker, cart, setCart }) {
           ))}
         </div>
         <div className="rbody">
-          {r.ingredients.length>0&&<><div className="lbl">Zutaten</div><div className="chips">{r.ingredients.map((x,i)=><span className="chip" key={i}>{x}</span>)}</div></>}
+          {r.ingredients.length>0&&<>
+            <div className="lbl">Zutaten</div>
+            <div className="chips">
+              {r.ingredients.map((x,i)=>{
+                const missing = x.includes('⚠️');
+                const clean = x.replace('✅','').replace('⚠️','').trim();
+                return <span className="chip" key={i} style={missing?{borderColor:'#ff944040',color:'#ff9440',background:'#1a0f00'}:{borderColor:'#00ff8730',color:'#00ff87',background:'#0a1a0f'}}>{missing?'⚠️ ':'✅ '}{clean}</span>;
+              })}
+            </div>
+          </>}
           {r.steps.length>0&&<><div className="lbl">Zubereitung</div>{r.steps.map((s,i)=><div className="srow" key={i}><div className="snum">{i+1}</div><div className="stxt">{s}</div></div>)}</>}
           {r.tip&&<div className="tipbox"><span style={{fontSize:16}}>💪</span><p>{r.tip}</p></div>}
         </div>
       </div>
+      {/* FRIDGE DETECTED */}
+      {r.fridge && r.fridge.length > 0 && (
+        <div style={{margin:'0 0 0 0',padding:'12px 18px',background:'#0a1a0f',borderTop:'1px solid #00ff8820'}}>
+          <div style={{fontSize:10,letterSpacing:2,textTransform:'uppercase',color:'#00ff87',fontWeight:700,marginBottom:8}}>✅ Im Kühlschrank erkannt</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+            {r.fridge.map((x,i)=><span key={i} style={{background:'#111',border:'1px solid #00ff8330',borderRadius:20,padding:'4px 10px',fontSize:11,color:'#7aff9e'}}>{x.replace('✅','').trim()}</span>)}
+          </div>
+        </div>
+      )}
       {/* ADD TO TRACKER */}
       {onAddToTracker && r.macros.cal !== '—' && (
         <button className="add-tracker-btn" onClick={() => onAddToTracker(r)}>
@@ -693,7 +715,42 @@ export default function App() {
     setLoading(true); setScanErr(null); setScanResult(null);
     try {
       setLoadStep('Bild wird analysiert…');
-      const text = await callAPI({ model:'claude-haiku-4-5-20251001', max_tokens:1400, system:'Du bist ein Fitness-Koch. Antworte auf Deutsch.\nFormat:\n# Rezeptname\nZeit: X Min\nSchwierigkeit: Einfach\nX kcal | Protein: Xg | Kohlenhydrate: Xg | Fett: Xg\n## Zutaten\n- ...\n## Einkaufsliste\n- ...\n## Zubereitung\n1. ...\n## Tipp\n...', messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},{type:'text',text:'Erkenne alle Lebensmittel und erstelle ein Fitness-Rezept.'}]}] });
+      const systemPrompt = `Du bist ein Weltklasse-Fitness-Koch und Ernährungsexperte. Analysiere das Kühlschrank-Foto EXAKT.
+
+WICHTIGE REGELN:
+1. Liste NUR Zutaten die du WIRKLICH im Bild siehst - keine Erfindungen
+2. Erstelle ein Rezept das HAUPTSÄCHLICH aus den vorhandenen Zutaten besteht
+3. Wähle ein weltweites Rezept (japanisch, mexikanisch, griechisch, indisch, koreanisch, etc.) das zu den Zutaten passt
+4. Falls 1-3 Zutaten fehlen die das Rezept viel besser machen, markiere diese mit ⚠️ in der Einkaufsliste
+5. Jedes Mal EIN ANDERES Rezept - nicht immer dasselbe
+
+Antworte GENAU in diesem Format auf Deutsch:
+
+# [Kreativer Rezeptname mit Herkunftsland]
+Zeit: X Min
+Schwierigkeit: Einfach/Mittel/Schwer
+[X] kcal | Protein: [X]g | Kohlenhydrate: [X]g | Fett: [X]g
+
+## Erkannte Zutaten im Kühlschrank
+- [Zutat 1] ✅
+- [Zutat 2] ✅
+(nur was du wirklich siehst)
+
+## Zutaten für das Rezept
+- [Menge] [Zutat] ✅ (vorhanden)
+- [Menge] [Zutat] ⚠️ (noch kaufen)
+
+## Einkaufsliste
+- [nur die Zutaten mit ⚠️]
+
+## Zubereitung
+1. [Konkreter Schritt]
+2. [Konkreter Schritt]
+
+## Fitness-Tipp
+[Warum dieses Gericht gut für Sport ist]`;
+
+      const text = await callAPI({ model:'claude-haiku-4-5-20251001', max_tokens:1600, system: systemPrompt, messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},{type:'text',text:'Analysiere diesen Kühlschrank genau. Was siehst du? Erstelle daraus ein weltweites Fitness-Rezept. Seed: '+Date.now()}]}] });
       setLoadStep('Rezept wird aufbereitet…');
       const recipe = parseRecipe(text); recipe.tag = 'Aus deinem Kühlschrank';
       setScanResult(recipe);

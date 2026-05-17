@@ -248,7 +248,9 @@ export default function App() {
     if (!f?.type.startsWith('image/')) return;
     setImg(URL.createObjectURL(f));
     setScanResult(null); setScanErr(null);
-    setB64Type(f.type || 'image/jpeg');
+    const rawType = f.type || 'image/jpeg';
+    const allowed = ['image/jpeg','image/png','image/gif','image/webp'];
+    setB64Type(allowed.includes(rawType) ? rawType : 'image/jpeg');
     const rd = new FileReader();
     rd.onload = e => setB64(e.target.result.split(',')[1]);
     rd.readAsDataURL(f);
@@ -266,7 +268,7 @@ export default function App() {
         messages: [{
           role: 'user',
           content: [
-            { type: 'image', source: { type: 'base64', media_type: b64Type, data: b64 } },
+            { type: 'image', source: { type: 'base64', media_type: (['image/jpeg','image/png','image/gif','image/webp'].includes(b64Type) ? b64Type : 'image/jpeg'), data: b64 } },
             { type: 'text', text: 'Erkenne alle Lebensmittel in diesem Bild und erstelle daraus ein proteinreiches Fitness-Rezept.' }
           ]
         }]

@@ -534,6 +534,168 @@ function CartTab({ cart, setCart }) {
   );
 }
 
+// ── FoodSearch ───────────────────────────────────────────────────────
+const FOOD_DB = [
+  {name:"Hühnerbrust (100g)",cal:110,prot:23,carbs:0,fat:2,emoji:"🍗"},
+  {name:"Ei (1 Stück)",cal:78,prot:6,carbs:0,fat:5,emoji:"🥚"},
+  {name:"Haferflocken (100g)",cal:370,prot:13,carbs:60,fat:7,emoji:"🌾"},
+  {name:"Banane (1 mittel)",cal:89,prot:1,carbs:23,fat:0,emoji:"🍌"},
+  {name:"Lachs (100g)",cal:208,prot:20,carbs:0,fat:13,emoji:"🐟"},
+  {name:"Thunfisch Dose (185g)",cal:130,prot:29,carbs:0,fat:1,emoji:"🐟"},
+  {name:"Magerquark (100g)",cal:61,prot:12,carbs:4,fat:0,emoji:"🧀"},
+  {name:"Skyr (100g)",cal:63,prot:11,carbs:4,fat:0,emoji:"🥛"},
+  {name:"Griechischer Joghurt (100g)",cal:97,prot:9,carbs:4,fat:5,emoji:"🥛"},
+  {name:"Magerjoghurt (100g)",cal:49,prot:5,carbs:6,fat:0,emoji:"🥛"},
+  {name:"Vollmilch (200ml)",cal:130,prot:7,carbs:10,fat:8,emoji:"🥛"},
+  {name:"Mandelmilch (200ml)",cal:28,prot:1,carbs:2,fat:2,emoji:"🥛"},
+  {name:"Whey Protein (1 Scoop 30g)",cal:120,prot:24,carbs:3,fat:2,emoji:"💪"},
+  {name:"Reis gekocht (100g)",cal:130,prot:3,carbs:28,fat:0,emoji:"🍚"},
+  {name:"Quinoa gekocht (100g)",cal:120,prot:4,carbs:21,fat:2,emoji:"🌾"},
+  {name:"Vollkorn-Pasta gekocht (100g)",cal:140,prot:5,carbs:27,fat:1,emoji:"🍝"},
+  {name:"Süßkartoffel (100g)",cal:86,prot:2,carbs:20,fat:0,emoji:"🍠"},
+  {name:"Avocado (½ Stück)",cal:120,prot:2,carbs:6,fat:11,emoji:"🥑"},
+  {name:"Spinat roh (100g)",cal:23,prot:3,carbs:4,fat:0,emoji:"🥬"},
+  {name:"Brokkoli (100g)",cal:34,prot:3,carbs:7,fat:0,emoji:"🥦"},
+  {name:"Tomate (1 mittel)",cal:22,prot:1,carbs:5,fat:0,emoji:"🍅"},
+  {name:"Gurke (100g)",cal:12,prot:1,carbs:2,fat:0,emoji:"🥒"},
+  {name:"Paprika rot (100g)",cal:31,prot:1,carbs:6,fat:0,emoji:"🫑"},
+  {name:"Erdnussbutter (1 EL 16g)",cal:94,prot:4,carbs:3,fat:8,emoji:"🥜"},
+  {name:"Olivenöl (1 EL 14g)",cal:119,prot:0,carbs:0,fat:14,emoji:"🫒"},
+  {name:"Rinderhack (100g)",cal:215,prot:17,carbs:0,fat:16,emoji:"🥩"},
+  {name:"Garnelen (100g)",cal:85,prot:20,carbs:0,fat:1,emoji:"🦐"},
+  {name:"Hüttenkäse (100g)",cal:98,prot:11,carbs:3,fat:4,emoji:"🧀"},
+  {name:"Fetakäse (100g)",cal:264,prot:14,carbs:4,fat:21,emoji:"🧀"},
+  {name:"Mozzarella (100g)",cal:280,prot:18,carbs:2,fat:22,emoji:"🧀"},
+  {name:"Vollkornbrot (1 Scheibe 50g)",cal:105,prot:4,carbs:19,fat:1,emoji:"🍞"},
+  {name:"Apfel (1 mittel)",cal:80,prot:0,carbs:21,fat:0,emoji:"🍎"},
+  {name:"Blaubeeren (100g)",cal:57,prot:1,carbs:14,fat:0,emoji:"🫐"},
+  {name:"Mandeln (30g)",cal:174,prot:6,carbs:5,fat:15,emoji:"🥜"},
+  {name:"Kidneybohnen (100g)",cal:127,prot:9,carbs:23,fat:0,emoji:"🫘"},
+  {name:"Linsen gekocht (100g)",cal:116,prot:9,carbs:20,fat:0,emoji:"🫘"},
+  {name:"Tofu (100g)",cal:76,prot:8,carbs:2,fat:5,emoji:"🟨"},
+  {name:"Pizza Margherita (1 Stück)",cal:230,prot:9,carbs:30,fat:8,emoji:"🍕"},
+  {name:"Burger (1 Standard)",cal:500,prot:25,carbs:40,fat:25,emoji:"🍔"},
+  {name:"Döner (1 Portion)",cal:550,prot:30,carbs:50,fat:20,emoji:"🌯"},
+  {name:"Schnitzel (150g)",cal:380,prot:28,carbs:12,fat:24,emoji:"🥩"},
+  {name:"Pasta Bolognese (1 Portion)",cal:520,prot:24,carbs:60,fat:16,emoji:"🍝"},
+  {name:"Cappuccino (1 Tasse)",cal:80,prot:4,carbs:8,fat:3,emoji:"☕"},
+  {name:"Protein Riegel",cal:200,prot:20,carbs:22,fat:6,emoji:"🍫"},
+  {name:"Bananen Smoothie (300ml)",cal:180,prot:4,carbs:38,fat:1,emoji:"🥤"},
+];
+
+function FoodSearch({ onAdd, onClose }) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState(null);
+  const [portion, setPortion] = useState(100);
+
+  useEffect(() => {
+    if (!query.trim()) { setResults([]); setAiResult(null); return; }
+    const q = query.toLowerCase();
+    const filtered = FOOD_DB.filter(f => f.name.toLowerCase().includes(q)).slice(0, 6);
+    setResults(filtered);
+  }, [query]);
+
+  const searchAI = async () => {
+    if (!query.trim()) return;
+    setAiLoading(true); setAiResult(null);
+    try {
+      const text = await callAPI({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 300,
+        messages: [{
+          role: 'user',
+          content: 'Nährwerte für: "' + query + '" (pro 100g oder typische Portion). Antworte NUR mit JSON: {"name":"Name","emoji":"🍽","cal":200,"prot":10,"carbs":25,"fat":5,"portion":"100g"}. Kein anderer Text.'
+        }]
+      });
+      const a = text.indexOf('{'), b = text.lastIndexOf('}');
+      if (a !== -1 && b !== -1) {
+        const parsed = JSON.parse(text.slice(a, b+1));
+        setAiResult(parsed);
+      }
+    } catch(e) {}
+    finally { setAiLoading(false); }
+  };
+
+  const scale = (val) => Math.round(val * portion / 100);
+
+  return (
+    <div style={{background:'#111',border:'1px solid #1a1a1a',borderRadius:16,padding:16,marginBottom:10,animation:'fadeUp .3s ease'}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+        <div style={{fontSize:13,color:'#fff',fontWeight:600}}>🔍 Was hast du gegessen?</div>
+        <button onClick={onClose} style={{background:'transparent',border:'1px solid #2a2a2a',borderRadius:8,color:'#555',cursor:'pointer',width:28,height:28,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13}}>✕</button>
+      </div>
+      <div style={{display:'flex',gap:8,marginBottom:12}}>
+        <input
+          value={query}
+          onChange={e=>setQuery(e.target.value)}
+          onKeyDown={e=>e.key==='Enter'&&searchAI()}
+          placeholder="z.B. Hühnerbrust, Pizza, Döner..."
+          autoFocus
+          style={{flex:1,background:'#1a1a1a',border:'1px solid #222',borderRadius:10,color:'#fff',padding:'10px 12px',fontFamily:'Inter',fontSize:13,outline:'none'}}
+        />
+        <button onClick={searchAI} disabled={aiLoading} style={{background:'linear-gradient(135deg,#00ff87,#00cc6a)',border:'none',borderRadius:10,padding:'10px 14px',color:'#000',fontFamily:'Inter',fontSize:12,fontWeight:700,cursor:'pointer',flexShrink:0,opacity:aiLoading?.5:1}}>
+          {aiLoading?'…':'KI'}
+        </button>
+      </div>
+
+      {/* Portion selector */}
+      {(results.length > 0 || aiResult) && (
+        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10,padding:'8px 10px',background:'#1a1a1a',borderRadius:10}}>
+          <span style={{fontSize:11,color:'#555'}}>Portion:</span>
+          {[50,100,150,200,300].map(p=>(
+            <button key={p} onClick={()=>setPortion(p)} style={{background:portion===p?'#00ff87':'transparent',border:'1px solid '+(portion===p?'#00ff87':'#2a2a2a'),borderRadius:6,color:portion===p?'#000':'#555',padding:'3px 8px',fontSize:11,cursor:'pointer',fontWeight:600,transition:'all .15s'}}>
+              {p}g
+            </button>
+          ))}
+          <input type="number" value={portion} onChange={e=>setPortion(Number(e.target.value))} style={{width:52,background:'transparent',border:'1px solid #2a2a2a',borderRadius:6,color:'#fff',padding:'3px 6px',fontSize:11,textAlign:'center'}} />
+        </div>
+      )}
+
+      {/* DB Results */}
+      {results.map((f,i) => (
+        <div key={i} onClick={()=>onAdd({...f,cal:scale(f.cal),prot:scale(f.prot),carbs:scale(f.carbs),fat:scale(f.fat),name:f.name+(portion!==100?' ('+portion+'g)':'')})}
+          style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:'#161616',border:'1px solid #1e1e1e',borderRadius:12,marginBottom:6,cursor:'pointer',transition:'all .2s'}}
+          onMouseOver={e=>e.currentTarget.style.borderColor='#00ff8740'}
+          onMouseOut={e=>e.currentTarget.style.borderColor='#1e1e1e'}>
+          <span style={{fontSize:24,flexShrink:0}}>{f.emoji}</span>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,color:'#ddd',fontWeight:500}}>{f.name}</div>
+            <div style={{fontSize:11,color:'#444',marginTop:2}}>P: {scale(f.prot)}g · C: {scale(f.carbs)}g · F: {scale(f.fat)}g</div>
+          </div>
+          <div style={{textAlign:'right',flexShrink:0}}>
+            <div style={{fontFamily:'Bebas Neue',fontSize:22,color:'#00ff87'}}>{scale(f.cal)}</div>
+            <div style={{fontSize:9,color:'#333',letterSpacing:1}}>KCAL</div>
+          </div>
+        </div>
+      ))}
+
+      {/* AI Result */}
+      {aiResult && (
+        <div onClick={()=>onAdd({...aiResult,cal:scale(aiResult.cal),prot:scale(aiResult.prot),carbs:scale(aiResult.carbs),fat:scale(aiResult.fat),name:aiResult.name+(portion!==100?' ('+portion+'g)':'')})}
+          style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:'#0a1a0f',border:'1px solid #00ff8440',borderRadius:12,marginBottom:6,cursor:'pointer'}}>
+          <span style={{fontSize:24}}>{aiResult.emoji||'🍽'}</span>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,color:'#ddd',fontWeight:500}}>{aiResult.name} <span style={{fontSize:10,color:'#00ff87',background:'#0f2a0f',borderRadius:4,padding:'1px 5px'}}>KI</span></div>
+            <div style={{fontSize:11,color:'#444',marginTop:2}}>P: {scale(aiResult.prot)}g · C: {scale(aiResult.carbs)}g · F: {scale(aiResult.fat)}g</div>
+          </div>
+          <div style={{textAlign:'right'}}>
+            <div style={{fontFamily:'Bebas Neue',fontSize:22,color:'#00ff87'}}>{scale(aiResult.cal)}</div>
+            <div style={{fontSize:9,color:'#333',letterSpacing:1}}>KCAL</div>
+          </div>
+        </div>
+      )}
+
+      {query && results.length === 0 && !aiResult && !aiLoading && (
+        <div style={{textAlign:'center',padding:'12px',color:'#444',fontSize:13}}>
+          Nichts gefunden · Drücke „KI" für KI-Suche
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── TrackerTab ────────────────────────────────────────────────────────
 const DAYS = ['Mo','Di','Mi','Do','Fr','Sa','So'];
 function TrackerTab() {
@@ -547,9 +709,6 @@ function TrackerTab() {
     return d;
   });
   const [showAdd, setShowAdd] = useState(false);
-  const [addName, setAddName] = useState('');
-  const [addCal, setAddCal] = useState('');
-  const [addProt, setAddProt] = useState('');
 
   const meals = weekData[selDay] || [];
   const totalCal = meals.reduce((s,m) => s + (m.cal||0), 0);
@@ -621,23 +780,8 @@ function TrackerTab() {
             <button className="meal-del" onClick={() => delMeal(m.id)}>✕</button>
           </div>
         ))}
-        {showAdd ? (
-          <div style={{background:'#111',border:'1px solid #1a1a1a',borderRadius:14,padding:14,marginBottom:8}}>
-            <div style={{fontSize:11,color:'#555',marginBottom:10,letterSpacing:1,textTransform:'uppercase'}}>Mahlzeit hinzufügen</div>
-            {[['Name',addName,setAddName,'text'],['Kalorien',addCal,setAddCal,'number'],['Protein (g)',addProt,setAddProt,'number']].map(([label,val,setter,type])=>(
-              <div key={label} style={{marginBottom:8}}>
-                <div style={{fontSize:11,color:'#444',marginBottom:4}}>{label}</div>
-                <input value={val} onChange={e=>setter(e.target.value)} type={type} placeholder={label} style={{width:'100%',background:'#1a1a1a',border:'1px solid #222',borderRadius:8,color:'#fff',padding:'8px 10px',fontFamily:'Inter',fontSize:13}} />
-              </div>
-            ))}
-            <div style={{display:'flex',gap:8,marginTop:10}}>
-              <button onClick={()=>{if(addName&&addCal){addMeal(addName,addCal,addProt,0,0,'🍽');setAddName('');setAddCal('');setAddProt('');setShowAdd(false);}}} style={{flex:1,background:'linear-gradient(135deg,#00ff87,#00cc6a)',border:'none',borderRadius:10,padding:'10px',color:'#000',fontFamily:'Bebas Neue',fontSize:16,letterSpacing:1,cursor:'pointer'}}>HINZUFÜGEN</button>
-              <button onClick={()=>setShowAdd(false)} style={{background:'transparent',border:'1px solid #2a2a2a',borderRadius:10,padding:'10px 14px',color:'#555',cursor:'pointer',fontSize:13}}>✕</button>
-            </div>
-          </div>
-        ) : (
-          <button className="add-meal-btn" onClick={() => setShowAdd(true)}>+ Mahlzeit hinzufügen</button>
-        )}
+        {showAdd && <FoodSearch onAdd={(meal)=>{addMeal(meal.name,meal.cal,meal.prot,meal.carbs,meal.fat,meal.emoji);setShowAdd(false);}} onClose={()=>setShowAdd(false)} />}
+        {!showAdd && <button className="add-meal-btn" onClick={() => setShowAdd(true)}>🔍 Lebensmittel suchen & hinzufügen</button>}
       </div>
 
       {/* Week view */}

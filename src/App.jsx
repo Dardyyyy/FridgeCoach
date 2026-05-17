@@ -534,6 +534,156 @@ function CartTab({ cart, setCart }) {
   );
 }
 
+// ── Activity Database ────────────────────────────────────────────────
+const ACTIVITIES = [
+  // Cardio
+  {name:"Joggen",emoji:"🏃",cat:"Cardio",calPerMin:10,met:9.8},
+  {name:"Spazieren",emoji:"🚶",cat:"Cardio",calPerMin:4,met:3.5},
+  {name:"Radfahren",emoji:"🚴",cat:"Cardio",calPerMin:8,met:7.5},
+  {name:"Schwimmen",emoji:"🏊",cat:"Cardio",calPerMin:9,met:8.0},
+  {name:"HIIT",emoji:"⚡",cat:"Cardio",calPerMin:12,met:12.0},
+  {name:"Seilspringen",emoji:"🪢",cat:"Cardio",calPerMin:11,met:11.0},
+  {name:"Rudern",emoji:"🚣",cat:"Cardio",calPerMin:9,met:8.5},
+  {name:"Wandern",emoji:"🥾",cat:"Cardio",calPerMin:6,met:5.3},
+  {name:"Tanzen",emoji:"💃",cat:"Cardio",calPerMin:7,met:6.5},
+  {name:"Treppensteigen",emoji:"🪜",cat:"Cardio",calPerMin:8,met:8.0},
+  // Kraft
+  {name:"Krafttraining",emoji:"🏋️",cat:"Kraft",calPerMin:6,met:5.5},
+  {name:"Liegestütze",emoji:"💪",cat:"Kraft",calPerMin:5,met:4.5},
+  {name:"Klimmzüge",emoji:"🔝",cat:"Kraft",calPerMin:5,met:5.0},
+  {name:"Yoga",emoji:"🧘",cat:"Flex",calPerMin:3,met:2.5},
+  {name:"Pilates",emoji:"🤸",cat:"Flex",calPerMin:4,met:3.0},
+  {name:"Stretching",emoji:"🦵",cat:"Flex",calPerMin:2,met:2.0},
+  // Sport
+  {name:"Fußball",emoji:"⚽",cat:"Sport",calPerMin:9,met:8.0},
+  {name:"Basketball",emoji:"🏀",cat:"Sport",calPerMin:8,met:7.5},
+  {name:"Tennis",emoji:"🎾",cat:"Sport",calPerMin:8,met:7.3},
+  {name:"Boxen",emoji:"🥊",cat:"Sport",calPerMin:11,met:10.5},
+];
+
+// How much sport to burn off food items
+const BURN_EQUIV = (cal) => ACTIVITIES.slice(0,6).map(a => ({
+  ...a,
+  minutes: Math.round(cal / a.calPerMin),
+}));
+
+// ── ActivitySearch ────────────────────────────────────────────────────
+function ActivitySearch({ onAdd, onClose }) {
+  const [query, setQuery] = useState('');
+  const [selAct, setSelAct] = useState(null);
+  const [duration, setDuration] = useState(30);
+  const [weight] = useState(75); // avg weight for cal calc
+
+  const filtered = query
+    ? ACTIVITIES.filter(a => a.name.toLowerCase().includes(query.toLowerCase()))
+    : ACTIVITIES;
+
+  const burned = selAct ? Math.round(selAct.calPerMin * duration) : 0;
+
+  return (
+    <div style={{background:'#111',border:'1px solid #1a1a1a',borderRadius:16,padding:16,marginBottom:10,animation:'fadeUp .3s ease'}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+        <div style={{fontSize:13,color:'#fff',fontWeight:600}}>🏃 Sport & Aktivität</div>
+        <button onClick={onClose} style={{background:'transparent',border:'1px solid #2a2a2a',borderRadius:8,color:'#555',cursor:'pointer',width:28,height:28,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13}}>✕</button>
+      </div>
+      <input value={query} onChange={e=>{setQuery(e.target.value);setSelAct(null);}} placeholder="Aktivität suchen..." style={{width:'100%',background:'#1a1a1a',border:'1px solid #222',borderRadius:10,color:'#fff',padding:'10px 12px',fontFamily:'Inter',fontSize:13,outline:'none',marginBottom:10}} />
+      
+      {/* Activity grid */}
+      {!selAct && (
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,maxHeight:200,overflowY:'auto'}}>
+          {filtered.map((a,i) => (
+            <div key={i} onClick={()=>setSelAct(a)} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 10px',background:'#161616',border:'1px solid #1e1e1e',borderRadius:10,cursor:'pointer',transition:'all .2s'}}
+              onMouseOver={e=>e.currentTarget.style.borderColor='#00ff8740'}
+              onMouseOut={e=>e.currentTarget.style.borderColor='#1e1e1e'}>
+              <span style={{fontSize:20}}>{a.emoji}</span>
+              <div>
+                <div style={{fontSize:12,color:'#ddd',fontWeight:500}}>{a.name}</div>
+                <div style={{fontSize:10,color:'#444'}}>{a.calPerMin} kcal/Min</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Duration + burn calc */}
+      {selAct && (
+        <div>
+          <div style={{display:'flex',alignItems:'center',gap:10,padding:'12px',background:'#0a1a0f',border:'1px solid #00ff8440',borderRadius:12,marginBottom:12}}>
+            <span style={{fontSize:32}}>{selAct.emoji}</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:14,color:'#fff',fontWeight:600}}>{selAct.name}</div>
+              <div style={{fontSize:11,color:'#00ff87',marginTop:2}}>{selAct.calPerMin} kcal/Min</div>
+            </div>
+            <button onClick={()=>setSelAct(null)} style={{background:'transparent',border:'1px solid #2a2a2a',borderRadius:8,color:'#555',fontSize:12,cursor:'pointer',padding:'4px 8px'}}>↩</button>
+          </div>
+
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:11,color:'#555',marginBottom:8,letterSpacing:1,textTransform:'uppercase'}}>Dauer</div>
+            <div style={{display:'flex',gap:6,marginBottom:8}}>
+              {[15,20,30,45,60,90].map(d=>(
+                <button key={d} onClick={()=>setDuration(d)} style={{flex:1,background:duration===d?'#00ff87':'#1a1a1a',border:'1px solid '+(duration===d?'#00ff87':'#222'),borderRadius:8,color:duration===d?'#000':'#555',padding:'7px 4px',fontSize:12,cursor:'pointer',fontWeight:600,transition:'all .15s'}}>
+                  {d}'
+                </button>
+              ))}
+            </div>
+            <input type="range" min={5} max={180} value={duration} onChange={e=>setDuration(Number(e.target.value))} style={{width:'100%',accentColor:'#00ff87'}} />
+          </div>
+
+          <div style={{background:'#0d0d0d',border:'1px solid #1a1a1a',borderRadius:12,padding:'14px',marginBottom:12,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <div>
+              <div style={{fontSize:11,color:'#555',letterSpacing:1,textTransform:'uppercase'}}>Verbrannte Kalorien</div>
+              <div style={{fontSize:11,color:'#333',marginTop:4}}>{duration} Min {selAct.name}</div>
+            </div>
+            <div style={{textAlign:'right'}}>
+              <div style={{fontFamily:'Bebas Neue',fontSize:36,color:'#ff6b6b',letterSpacing:1}}>-{burned}</div>
+              <div style={{fontSize:10,color:'#444',letterSpacing:1}}>KCAL</div>
+            </div>
+          </div>
+
+          <button onClick={()=>onAdd({...selAct,duration,burned,id:Date.now()})} style={{width:'100%',background:'linear-gradient(135deg,#00ff87,#00cc6a)',border:'none',borderRadius:12,padding:'14px',color:'#000',fontFamily:'Bebas Neue',fontSize:18,letterSpacing:2,cursor:'pointer'}}>
+            AKTIVITÄT SPEICHERN · -{burned} KCAL
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── BurnCalc ──────────────────────────────────────────────────────────
+function BurnCalc({ item, onClose }) {
+  const burns = BURN_EQUIV(item.cal);
+  return (
+    <div className="sheet">
+      <div className="sheet-bg" onClick={onClose} />
+      <div className="sheet-box">
+        <div className="sheet-hdr">
+          <div className="sheet-title">{item.emoji} {item.name}</div>
+          <button className="sheet-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="sheet-sub" style={{marginBottom:16}}>
+          {item.cal} kcal · Wie viel Sport brauchst du?
+        </div>
+        {burns.map((b,i) => (
+          <div key={i} style={{display:'flex',alignItems:'center',gap:12,padding:'12px',background:'#111',border:'1px solid #1a1a1a',borderRadius:12,marginBottom:8}}>
+            <span style={{fontSize:28,flexShrink:0}}>{b.emoji}</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,color:'#ddd',fontWeight:500}}>{b.name}</div>
+              <div style={{fontSize:11,color:'#444',marginTop:2}}>{b.calPerMin} kcal/Min</div>
+            </div>
+            <div style={{textAlign:'right',flexShrink:0}}>
+              <div style={{fontFamily:'Bebas Neue',fontSize:24,color:'#ff6b6b'}}>{b.minutes} Min</div>
+              <div style={{fontSize:9,color:'#333',letterSpacing:1}}>NÖTIG</div>
+            </div>
+          </div>
+        ))}
+        <div style={{marginTop:8,padding:'12px 14px',background:'#0a0a0a',border:'1px solid #1a1a1a',borderRadius:12,fontSize:12,color:'#444',lineHeight:1.6}}>
+          💡 Richtwert für ~75kg Körpergewicht. Individuell kann es variieren.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── FoodSearch ───────────────────────────────────────────────────────
 const FOOD_DB = [
   {name:"Hühnerbrust (100g)",cal:110,prot:23,carbs:0,fat:2,emoji:"🍗"},
@@ -709,14 +859,19 @@ function TrackerTab() {
     return d;
   });
   const [showAdd, setShowAdd] = useState(false);
+  const [showActivity, setShowActivity] = useState(false);
+  const [activities, setActivities] = useState(() => { const d = {}; DAYS.forEach((_,i)=>{d[i]=[];}); return d; });
+  const [burnItem, setBurnItem] = useState(null);
 
   const meals = weekData[selDay] || [];
   const totalCal = meals.reduce((s,m) => s + (m.cal||0), 0);
+  const totalBurned = (activities[selDay]||[]).reduce((s,a) => s + (a.burned||0), 0);
+  const netCal = totalCal - totalBurned;
   const totalProt = meals.reduce((s,m) => s + (m.prot||0), 0);
   const totalCarbs = meals.reduce((s,m) => s + (m.carbs||0), 0);
   const totalFat = meals.reduce((s,m) => s + (m.fat||0), 0);
-  const pct = Math.min(totalCal / goal * 100, 100);
-  const isOver = totalCal > goal;
+  const pct = Math.min(netCal / goal * 100, 100);
+  const isOver = netCal > goal && totalBurned >= 0;
 
   const addMeal = (name, cal, prot, carbs, fat, emoji) => {
     setWeekData(prev => ({ ...prev, [selDay]: [...(prev[selDay]||[]), { id:Date.now(), name, cal:Number(cal)||0, prot:Number(prot)||0, carbs:Number(carbs)||0, fat:Number(fat)||0, emoji:emoji||'🍽', time:new Date().toLocaleTimeString('de',{hour:'2-digit',minute:'2-digit'}) }] }));
@@ -751,9 +906,10 @@ function TrackerTab() {
         <div className="cal-bar-wrap">
           <div className={`cal-bar${isOver?' over':''}`} style={{width:`${pct}%`}} />
         </div>
-        <div className="cal-labels">
-          <span><strong>{totalCal}</strong> gegessen</span>
-          <span>{Math.max(0, goal-totalCal)} noch frei</span>
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#444',marginTop:4}}>
+          <span>🍽 <strong style={{color:'#f0f0f0'}}>{totalCal}</strong> gegessen</span>
+          {totalBurned>0&&<span>🔥 <strong style={{color:'#ff6b6b'}}>-{totalBurned}</strong> Sport</span>}
+          <span>= <strong style={{color:isOver?'#ff6b6b':'#00ff87'}}>{Math.max(0,goal-netCal)}</strong> frei</span>
         </div>
         {/* Macro summary */}
         <div className="macro-summary">
@@ -776,7 +932,10 @@ function TrackerTab() {
               <div className="meal-name">{m.name}</div>
               <div className="meal-macros">P: {m.prot}g · C: {m.carbs}g · F: {m.fat}g · {m.time}</div>
             </div>
-            <div className="meal-cal">{m.cal}</div>
+            <div style={{textAlign:'right'}}>
+              <div className="meal-cal" style={{cursor:'pointer'}} onClick={()=>setBurnItem(m)} title="Wie viel Sport?">{m.cal}</div>
+              <div style={{fontSize:9,color:'#333',letterSpacing:.5}}>🔥?</div>
+            </div>
             <button className="meal-del" onClick={() => delMeal(m.id)}>✕</button>
           </div>
         ))}
@@ -784,12 +943,35 @@ function TrackerTab() {
         {!showAdd && <button className="add-meal-btn" onClick={() => setShowAdd(true)}>🔍 Lebensmittel suchen & hinzufügen</button>}
       </div>
 
+      {/* Activities */}
+      <div style={{marginTop:20}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+          <div className="slabel" style={{marginBottom:0}}>Sport & Aktivitäten</div>
+          {totalBurned>0&&<span style={{fontSize:12,color:'#ff6b6b',fontWeight:600}}>🔥 -{totalBurned} kcal</span>}
+        </div>
+        {(activities[selDay]||[]).map(a => (
+          <div key={a.id} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:'#111',border:'1px solid #1a1a1a',borderRadius:12,marginBottom:6,animation:'fadeUp .3s ease'}}>
+            <span style={{fontSize:22}}>{a.emoji}</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,color:'#ddd',fontWeight:500}}>{a.name}</div>
+              <div style={{fontSize:11,color:'#444',marginTop:1}}>{a.duration} Minuten</div>
+            </div>
+            <div style={{fontFamily:'Bebas Neue',fontSize:20,color:'#ff6b6b'}}>-{a.burned}</div>
+            <button onClick={()=>setActivities(prev=>({...prev,[selDay]:prev[selDay].filter(x=>x.id!==a.id)}))} style={{background:'transparent',border:'none',color:'#333',fontSize:14,cursor:'pointer',padding:4}}>✕</button>
+          </div>
+        ))}
+        {showActivity
+          ? <ActivitySearch onAdd={(a)=>{setActivities(prev=>({...prev,[selDay]:[...(prev[selDay]||[]),a]}));setShowActivity(false);}} onClose={()=>setShowActivity(false)} />
+          : <button className="add-meal-btn" onClick={()=>setShowActivity(true)}>🏃 Sport hinzufügen</button>
+        }
+      </div>
+
       {/* Week view */}
       <div className="week-view">
         <div className="week-title">Wochenverlauf</div>
         <div className="week-bars">
           {DAYS.map((d,i) => {
-            const dayCal = (weekData[i]||[]).reduce((s,m)=>s+(m.cal||0),0);
+            const dayCal = Math.max(0, (weekData[i]||[]).reduce((s,m)=>s+(m.cal||0),0) - (activities[i]||[]).reduce((s,a)=>s+(a.burned||0),0));
             const barPct = goal > 0 ? Math.min(dayCal/goal*100, 100) : 0;
             const over = dayCal > goal;
             return (
@@ -806,6 +988,7 @@ function TrackerTab() {
           Ziel: {goal} kcal/Tag · Woche Ø: {Math.round(Object.values(weekData).filter(d=>d.length>0).reduce((s,d)=>s+d.reduce((ss,m)=>ss+(m.cal||0),0),0) / Math.max(1,Object.values(weekData).filter(d=>d.length>0).length))} kcal
         </div>
       </div>
+      {burnItem && <BurnCalc item={burnItem} onClose={()=>setBurnItem(null)} />}
     </div>
   );
 }

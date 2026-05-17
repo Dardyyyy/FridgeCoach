@@ -193,8 +193,27 @@ body{background:#050505;color:#f0f0f0;font-family:'Inter',sans-serif;min-height:
 .airow.on .chev{transform:rotate(180deg);color:#00ff87}
 .rewe-btn{width:100%;margin-top:14px;background:linear-gradient(135deg,#cc071e,#a30018);border:none;border-radius:14px;padding:14px 16px;color:#fff;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;box-shadow:0 4px 16px rgba(204,7,30,.3)}
 .rewe-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(204,7,30,.4)}
-.rewe-mini{background:transparent;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;opacity:.5;transition:opacity .2s;flex-shrink:0}
-.rewe-mini:hover{opacity:1}
+.rewe-mini{background:#1a0a0a;border:1px solid #2a1010;border-radius:8px;cursor:pointer;padding:5px 9px;display:flex;align-items:center;color:#cc071e;font-size:10px;font-weight:700;font-family:'Inter',sans-serif;transition:all .2s;flex-shrink:0;letter-spacing:.3px}
+.rewe-mini:hover{background:#cc071e;color:#fff}
+.rewe-sheet{position:fixed;inset:0;z-index:999;display:flex;flex-direction:column;justify-content:flex-end}
+.rewe-sheet-bg{position:absolute;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px)}
+.rewe-sheet-box{position:relative;background:#0d0d0d;border-radius:24px 24px 0 0;border:1px solid #1a1a1a;border-bottom:none;padding:24px 20px 40px;max-height:75vh;overflow-y:auto;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.rewe-sheet-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.rewe-sheet-title{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:1px}
+.rewe-sheet-close{background:transparent;border:1px solid #2a2a2a;border-radius:8px;color:#666;font-size:16px;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center}
+.rewe-sheet-sub{font-size:12px;color:#444;margin-bottom:16px}
+.rewe-product{display:flex;align-items:center;gap:12px;padding:12px;background:#111;border:1px solid #1a1a1a;border-radius:14px;margin-bottom:10px;cursor:pointer;transition:all .2s;text-decoration:none}
+.rewe-product:hover{border-color:#cc071e;background:#1a0808}
+.rewe-product-img{width:56px;height:56px;border-radius:10px;object-fit:cover;background:#1a1a1a;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:24px}
+.rewe-product-info{flex:1}
+.rewe-product-name{font-size:13px;color:#ddd;font-weight:500;line-height:1.3}
+.rewe-product-brand{font-size:11px;color:#444;margin-top:2px}
+.rewe-product-price{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#cc071e;letter-spacing:.5px;flex-shrink:0}
+.rewe-product-unit{font-size:10px;color:#333;text-align:right;margin-top:2px}
+.rewe-order-btn{width:100%;margin-top:4px;background:linear-gradient(135deg,#cc071e,#a30018);border:none;border-radius:14px;padding:15px;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;cursor:pointer;transition:all .2s;box-shadow:0 4px 16px rgba(204,7,30,.3)}
+.rewe-order-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(204,7,30,.5)}
+.rewe-loading{text-align:center;padding:24px;color:#444;font-size:13px}
 `;
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -237,26 +256,62 @@ function parseRecipe(raw) {
   return { name: name||'Fitness Rezept', ingredients: ing, steps, tip: tip.trim(), shopping, time, difficulty: diff, macros: parseMacros(raw) };
 }
 
+// ── ReweSheet ─────────────────────────────────────────────────────────
+function ReweSheet({ item, onClose }) {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const query = item.replace(/\d+g|\d+ml|\d+x/g, '').replace(/\d+\s/g, '').trim();
+
+  useEffect(() => {
+    fetch('/api/rewe?query=' + encodeURIComponent(query))
+      .then(r => r.json())
+      .then(data => { setProducts(data.products || []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [query]);
+
+  const openRewe = (productName) => {
+    const q = productName || query;
+    window.open('https://shop.rewe.de/products?search=' + encodeURIComponent(q), '_blank');
+  };
+
+  return (
+    <div className="rewe-sheet">
+      <div className="rewe-sheet-bg" onClick={onClose} />
+      <div className="rewe-sheet-box">
+        <div className="rewe-sheet-hdr">
+          <div className="rewe-sheet-title">🔴 {query}</div>
+          <button className="rewe-sheet-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="rewe-sheet-sub">Produkte bei Rewe · Preis inkl. Lieferung</div>
+        {loading && <div className="rewe-loading">Preise werden geladen…</div>}
+        {!loading && products.map((p, i) => (
+          <div key={i} className="rewe-product" onClick={() => openRewe(p.name)}>
+            <div className="rewe-product-img">{p.img ? <img src={p.img} alt={p.name} style={{width:'100%',height:'100%',borderRadius:10,objectFit:'cover'}} /> : '🛒'}</div>
+            <div className="rewe-product-info">
+              <div className="rewe-product-name">{p.name}</div>
+              <div className="rewe-product-brand">{p.brand} {p.unit && '· ' + p.unit}</div>
+            </div>
+            <div style={{textAlign:'right'}}>
+              <div className="rewe-product-price">{p.priceFormatted || '–'}</div>
+              <div className="rewe-product-unit">→ Rewe</div>
+            </div>
+          </div>
+        ))}
+        <button className="rewe-order-btn" onClick={() => openRewe()}>
+          ALLE BEI REWE ANSEHEN
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── RecipeView ────────────────────────────────────────────────────────
 function RecipeView({ r }) {
   const [checked, setChecked] = useState({});
+  const [reweItem, setReweItem] = useState(null);
   const list = r.shopping?.length ? r.shopping : r.ingredients;
   const toggle = i => setChecked(p => ({ ...p, [i]: !p[i] }));
   const done = Object.values(checked).filter(Boolean).length;
-  const openRewe = () => {
-    const items = list.slice(0, 3); // open top 3 items in separate tabs
-    items.forEach((item, i) => {
-      const query = item.replace(/\d+g|\d+ml|\d+x|\d+\s/g, '').trim();
-      setTimeout(() => {
-        window.open('https://shop.rewe.de/products?search=' + encodeURIComponent(query), '_blank');
-      }, i * 300);
-    });
-  };
-
-  const openReweSingle = (item) => {
-    const query = item.replace(/\d+g|\d+ml|\d+x|\d+\s/g, '').trim();
-    window.open('https://shop.rewe.de/products?search=' + encodeURIComponent(query), '_blank');
-  };
 
   return (
     <>
@@ -295,16 +350,15 @@ function RecipeView({ r }) {
             <div className="shitem" key={i}>
               <div className={`shcheck${checked[i]?' on':''}`} onClick={() => toggle(i)}>{checked[i]?'✓':''}</div>
               <div className={`shname${checked[i]?' done':''}`} onClick={() => toggle(i)}>{item}</div>
-              <button className="rewe-mini" onClick={() => openReweSingle(item)} title="Bei Rewe suchen">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Rewe_Logo.svg/120px-Rewe_Logo.svg.png" alt="Rewe" style={{height:14,opacity:.7}} />
-              </button>
+              <button className="rewe-mini" onClick={() => setReweItem(item)}>REWE</button>
             </div>
           ))}
-          <button className="rewe-btn" onClick={openRewe}>
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Rewe_Logo.svg/120px-Rewe_Logo.svg.png" alt="Rewe" style={{height:18}} />
-            <span>Zutaten bei Rewe bestellen</span>
+          <button className="rewe-btn" onClick={() => setReweItem(list[0])}>
+            <span style={{fontSize:16}}>🔴</span>
+            <span>Preise & Varianten bei Rewe</span>
             <span style={{fontSize:11,opacity:.6}}>→</span>
           </button>
+          {reweItem && <ReweSheet item={reweItem} onClose={() => setReweItem(null)} />}
         </div>
       )}
     </>

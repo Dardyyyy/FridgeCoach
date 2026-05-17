@@ -248,12 +248,28 @@ export default function App() {
     if (!f?.type.startsWith('image/')) return;
     setImg(URL.createObjectURL(f));
     setScanResult(null); setScanErr(null);
-    const rawType = f.type || 'image/jpeg';
-    const allowed = ['image/jpeg','image/png','image/gif','image/webp'];
-    setB64Type(allowed.includes(rawType) ? rawType : 'image/jpeg');
-    const rd = new FileReader();
-    rd.onload = e => setB64(e.target.result.split(',')[1]);
-    rd.readAsDataURL(f);
+    setB64Type('image/jpeg');
+
+    // Compress image to max 1024px and quality 0.7 before sending
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1024;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const compressed = canvas.toDataURL('image/jpeg', 0.75);
+        setB64(compressed.split(',')[1]);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(f);
   };
 
   const doScan = async () => {

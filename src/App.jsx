@@ -191,6 +191,10 @@ body{background:#050505;color:#f0f0f0;font-family:'Inter',sans-serif;min-height:
 .aiprot{font-size:12px;color:#00ff87;font-weight:600;margin-top:5px}
 .chev{color:#2a2a2a;font-size:12px;padding-right:14px;transition:transform .25s}
 .airow.on .chev{transform:rotate(180deg);color:#00ff87}
+.rewe-btn{width:100%;margin-top:14px;background:linear-gradient(135deg,#cc071e,#a30018);border:none;border-radius:14px;padding:14px 16px;color:#fff;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;box-shadow:0 4px 16px rgba(204,7,30,.3)}
+.rewe-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(204,7,30,.4)}
+.rewe-mini{background:transparent;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;opacity:.5;transition:opacity .2s;flex-shrink:0}
+.rewe-mini:hover{opacity:1}
 `;
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -239,6 +243,21 @@ function RecipeView({ r }) {
   const list = r.shopping?.length ? r.shopping : r.ingredients;
   const toggle = i => setChecked(p => ({ ...p, [i]: !p[i] }));
   const done = Object.values(checked).filter(Boolean).length;
+  const openRewe = () => {
+    const items = list.slice(0, 3); // open top 3 items in separate tabs
+    items.forEach((item, i) => {
+      const query = item.replace(/\d+g|\d+ml|\d+x|\d+\s/g, '').trim();
+      setTimeout(() => {
+        window.open('https://shop.rewe.de/products?search=' + encodeURIComponent(query), '_blank');
+      }, i * 300);
+    });
+  };
+
+  const openReweSingle = (item) => {
+    const query = item.replace(/\d+g|\d+ml|\d+x|\d+\s/g, '').trim();
+    window.open('https://shop.rewe.de/products?search=' + encodeURIComponent(query), '_blank');
+  };
+
   return (
     <>
       <div className="rcard">
@@ -267,14 +286,25 @@ function RecipeView({ r }) {
       </div>
       {list.length>0 && (
         <div className="shcard">
-          <div className="shhdr"><div className="shlbl">🛒 Einkaufsliste</div><span style={{fontSize:11,color:'#333'}}>{done}/{list.length}</span></div>
+          <div className="shhdr">
+            <div className="shlbl">🛒 Einkaufsliste</div>
+            <span style={{fontSize:11,color:'#333'}}>{done}/{list.length}</span>
+          </div>
           <div className="shprog"><div className="shbar" style={{width:`${list.length?done/list.length*100:0}%`}} /></div>
           {list.map((item,i) => (
-            <div className="shitem" key={i} onClick={() => toggle(i)}>
-              <div className={`shcheck${checked[i]?' on':''}`}>{checked[i]?'✓':''}</div>
-              <div className={`shname${checked[i]?' done':''}`}>{item}</div>
+            <div className="shitem" key={i}>
+              <div className={`shcheck${checked[i]?' on':''}`} onClick={() => toggle(i)}>{checked[i]?'✓':''}</div>
+              <div className={`shname${checked[i]?' done':''}`} onClick={() => toggle(i)}>{item}</div>
+              <button className="rewe-mini" onClick={() => openReweSingle(item)} title="Bei Rewe suchen">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Rewe_Logo.svg/120px-Rewe_Logo.svg.png" alt="Rewe" style={{height:14,opacity:.7}} />
+              </button>
             </div>
           ))}
+          <button className="rewe-btn" onClick={openRewe}>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Rewe_Logo.svg/120px-Rewe_Logo.svg.png" alt="Rewe" style={{height:18}} />
+            <span>Zutaten bei Rewe bestellen</span>
+            <span style={{fontSize:11,opacity:.6}}>→</span>
+          </button>
         </div>
       )}
     </>

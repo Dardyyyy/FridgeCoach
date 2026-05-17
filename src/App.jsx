@@ -989,6 +989,257 @@ function TrackerTab({ weekData, setWeekData, activities, setActivities }) {
   );
 }
 
+// ── SuppsTab ─────────────────────────────────────────────────────────
+const GOALS = [
+  {id:'muscle', label:'Muskelaufbau', emoji:'💪', desc:'Maximale Muskelmasse'},
+  {id:'lean',   label:'Lean & Definiert', emoji:'🏋️', desc:'Muskeln + Fett verlieren'},
+  {id:'fat',    label:'Fett verbrennen', emoji:'🔥', desc:'Gewicht reduzieren'},
+  {id:'endurance', label:'Ausdauer', emoji:'🏃', desc:'Cardio & Fitness'},
+  {id:'health', label:'Gesundheit', emoji:'❤️', desc:'Allgemein fit bleiben'},
+  {id:'energy', label:'Energie & Focus', emoji:'⚡', desc:'Mehr Power im Alltag'},
+];
+
+const SUPP_DB = {
+  muscle: [
+    {name:"Whey Protein",emoji:"🥛",timing:"Post-Workout",dose:"25-40g",why:"Schnelle Aminosäuren für Muskelaufbau direkt nach dem Training",priority:"MUST HAVE",color:"#00ff87"},
+    {name:"Kreatin Monohydrat",emoji:"💎",timing:"Täglich",dose:"3-5g",why:"Erhöht Kraftleistung, Muskelmasse und Regeneration – best researched supplement",priority:"MUST HAVE",color:"#00ff87"},
+    {name:"Casein Protein",emoji:"🌙",timing:"Vor dem Schlafen",dose:"30-40g",why:"Langsam verdauliches Protein für nächtliche Muskelregeneration",priority:"EMPFOHLEN",color:"#1a73e8"},
+    {name:"Vitamin D3 + K2",emoji:"☀️",timing:"Morgens mit Fett",dose:"2000-5000 IU D3",why:"Testosteron, Knochen, Immunsystem – die meisten Menschen haben Mangel",priority:"EMPFOHLEN",color:"#1a73e8"},
+    {name:"Magnesium",emoji:"🔋",timing:"Abends",dose:"300-400mg",why:"Muskelentspannung, Schlaf, Proteinsynthese – verloren durch Schwitzen",priority:"EMPFOHLEN",color:"#1a73e8"},
+    {name:"Omega-3 (Fish Oil)",emoji:"🐟",timing:"Zu einer Mahlzeit",dose:"2-3g EPA/DHA",why:"Entzündungshemmend, Herzgesundheit, unterstützt Muskelaufbau",priority:"OPTIONAL",color:"#ff9440"},
+    {name:"ZMA (Zink/Magnesium)",emoji:"🌟",timing:"Vor dem Schlafen",dose:"Nach Packung",why:"Optimiert Testosteron und Schlafqualität für bessere Regeneration",priority:"OPTIONAL",color:"#ff9440"},
+  ],
+  lean: [
+    {name:"Whey Protein Isolat",emoji:"🥛",timing:"Post-Workout",dose:"25-30g",why:"Höchster Proteingehalt bei wenig Kalorien – erhält Muskeln beim Cutten",priority:"MUST HAVE",color:"#00ff87"},
+    {name:"Kreatin",emoji:"💎",timing:"Täglich",dose:"3-5g",why:"Erhält Muskelkraft und -masse beim Kaloriendefizit",priority:"MUST HAVE",color:"#00ff87"},
+    {name:"L-Carnitin",emoji:"🔥",timing:"30 Min vor Training",dose:"1-2g",why:"Transportiert Fettsäuren in die Mitochondrien zur Verbrennung",priority:"EMPFOHLEN",color:"#1a73e8"},
+    {name:"Koffein",emoji:"☕",timing:"30-60 Min vor Training",dose:"150-300mg",why:"Steigert Fettverbrennung, Ausdauer und Fokus",priority:"EMPFOHLEN",color:"#1a73e8"},
+    {name:"Vitamin D3 + K2",emoji:"☀️",timing:"Morgens",dose:"2000-4000 IU",why:"Hormonsystem, Immunsystem, Knochendichte",priority:"EMPFOHLEN",color:"#1a73e8"},
+    {name:"Grüntee-Extrakt (EGCG)",emoji:"🍵",timing:"Morgens nüchtern",dose:"400-600mg EGCG",why:"Boosted Stoffwechsel und Fettverbrennung nachweislich",priority:"OPTIONAL",color:"#ff9440"},
+    {name:"CLA",emoji:"🌿",timing:"Zu den Mahlzeiten",dose:"3-4g",why:"Konjugierte Linolsäure – leicht fettreduzierend, erhält Muskeln",priority:"OPTIONAL",color:"#ff9440"},
+  ],
+  fat: [
+    {name:"Protein Pulver",emoji:"🥛",timing:"Als Mahlzeit-Ersatz",dose:"25-30g",why:"Sättigt lange, erhält Muskeln beim Abnehmen, wenig Kalorien",priority:"MUST HAVE",color:"#00ff87"},
+    {name:"Koffein",emoji:"☕",timing:"Morgens & vor Training",dose:"150-300mg",why:"Erhöht Grundumsatz, unterdrückt Appetit, verbessert Training",priority:"MUST HAVE",color:"#00ff87"},
+    {name:"L-Carnitin",emoji:"🔥",timing:"30 Min vor Cardio",dose:"2-3g",why:"Optimiert Fettverwertung als Energiequelle beim Cardio",priority:"EMPFOHLEN",color:"#1a73e8"},
+    {name:"Ballaststoffe (Psyllium)",emoji:"🌾",timing:"Vor Mahlzeiten",dose:"5-10g",why:"Sättigt, stabilisiert Blutzucker, reduziert Kalorienaufnahme",priority:"EMPFOHLEN",color:"#1a73e8"},
+    {name:"Grüntee-Extrakt",emoji:"🍵",timing:"Morgens",dose:"400-600mg EGCG",why:"Thermogenese – Körper verbrennt mehr Kalorien in Ruhe",priority:"EMPFOHLEN",color:"#1a73e8"},
+    {name:"Glucomannan",emoji:"🌱",timing:"30 Min vor Mahlzeit",dose:"1-3g",why:"Natürlicher Appetitzügler, quillt im Magen auf",priority:"OPTIONAL",color:"#ff9440"},
+  ],
+  endurance: [
+    {name:"Kohlenhydrat-Pulver",emoji:"⚡",timing:"Während Training >60 Min",dose:"30-60g/h",why:"Glykogen-Nachschub für Ausdauerleistung ohne Einbruch",priority:"MUST HAVE",color:"#00ff87"},
+    {name:"Elektrolyte",emoji:"💧",timing:"Vor/während/nach Training",dose:"Nach Packung",why:"Natrium, Kalium, Magnesium – verloren durch Schwitzen",priority:"MUST HAVE",color:"#00ff87"},
+    {name:"Beta-Alanin",emoji:"🌊",timing:"Täglich",dose:"3-6g",why:"Puffert Milchsäure, verzögert Ermüdung bei Ausdauersport",priority:"EMPFOHLEN",color:"#1a73e8"},
+    {name:"Rote-Beete-Extrakt",emoji:"🫀",timing:"2-3h vor Training",dose:"500mg Nitrat",why:"Erweitert Blutgefäße, verbessert O2-Versorgung nachweislich",priority:"EMPFOHLEN",color:"#1a73e8"},
+    {name:"Koffein",emoji:"☕",timing:"45-60 Min vor Training",dose:"150-300mg",why:"Signifikante Ausdauerverbesserung in der Forschung belegt",priority:"EMPFOHLEN",color:"#1a73e8"},
+    {name:"Vitamin B12",emoji:"🔬",timing:"Morgens",dose:"500-1000mcg",why:"Energiestoffwechsel, Blutbildung, Nervensystem",priority:"OPTIONAL",color:"#ff9440"},
+    {name:"Eisen",emoji:"🩸",timing:"Nüchtern mit Vitamin C",dose:"Nach Blutbild",why:"Sauerstofftransport – bei Ausdauersportlern oft niedrig",priority:"OPTIONAL",color:"#ff9440"},
+  ],
+  health: [
+    {name:"Vitamin D3 + K2",emoji:"☀️",timing:"Morgens mit Fett",dose:"2000-4000 IU D3",why:"80% der Deutschen haben Mangel – essenziell für alles",priority:"MUST HAVE",color:"#00ff87"},
+    {name:"Omega-3",emoji:"🐟",timing:"Zu einer Mahlzeit",dose:"2-3g EPA/DHA",why:"Herzgesundheit, Entzündungen, Gehirn, Gelenke",priority:"MUST HAVE",color:"#00ff87"},
+    {name:"Magnesium",emoji:"🔋",timing:"Abends",dose:"300-400mg",why:"Beteiligt an 300+ Körperprozessen – Schlaf, Muskeln, Herzrhythmus",priority:"EMPFOHLEN",color:"#1a73e8"},
+    {name:"Probiotika",emoji:"🦠",timing:"Morgens nüchtern",dose:"10-50 Mrd. KBE",why:"Darmgesundheit, Immunsystem, mentale Gesundheit",priority:"EMPFOHLEN",color:"#1a73e8"},
+    {name:"Zink",emoji:"⚗️",timing:"Abends",dose:"15-25mg",why:"Immunsystem, Hormonsystem, Wundheilung",priority:"EMPFOHLEN",color:"#1a73e8"},
+    {name:"Ashwagandha",emoji:"🌿",timing:"Abends",dose:"300-600mg KSM-66",why:"Stressreduktion, Cortisol senken, Schlaf verbessern",priority:"OPTIONAL",color:"#ff9440"},
+  ],
+  energy: [
+    {name:"Koffein + L-Theanin",emoji:"☕",timing:"Morgens",dose:"100-200mg Koffein + 200mg L-Theanin",why:"Synergistisch: Fokus ohne Nervosität – die beste Kombination",priority:"MUST HAVE",color:"#00ff87"},
+    {name:"Vitamin B-Komplex",emoji:"⚡",timing:"Morgens mit Frühstück",dose:"Nach Packung",why:"Alle B-Vitamine für Energiestoffwechsel und Nerven",priority:"MUST HAVE",color:"#00ff87"},
+    {name:"Rhodiola Rosea",emoji:"🏔️",timing:"Morgens nüchtern",dose:"400-600mg",why:"Adaptogen – reduziert mentale Erschöpfung, verbessert Fokus",priority:"EMPFOHLEN",color:"#1a73e8"},
+    {name:"Vitamin D3",emoji:"☀️",timing:"Morgens",dose:"2000-4000 IU",why:"Energie, Stimmung, Fokus – besonders im Winter wichtig",priority:"EMPFOHLEN",color:"#1a73e8"},
+    {name:"CoQ10",emoji:"🔬",timing:"Morgens mit Fett",dose:"100-200mg",why:"Zelluläre Energieproduktion (ATP) – besonders ab 35+",priority:"EMPFOHLEN",color:"#1a73e8"},
+    {name:"Kreatin",emoji:"💎",timing:"Täglich",dose:"3-5g",why:"Nicht nur Kraft – auch Gehirnfunktion und mentale Energie",priority:"OPTIONAL",color:"#ff9440"},
+  ],
+};
+
+function bmi(weight, height) {
+  const h = height / 100;
+  return (weight / (h * h)).toFixed(1);
+}
+function bmr(weight, height, age, gender) {
+  if (gender === 'm') return Math.round(88.36 + 13.4*weight + 4.8*height - 5.7*age);
+  return Math.round(447.6 + 9.2*weight + 3.1*height - 4.3*age);
+}
+function tdee(bmrVal, actLevel) {
+  const factors = {sedentary:1.2, light:1.375, moderate:1.55, active:1.725, veryactive:1.9};
+  return Math.round(bmrVal * (factors[actLevel]||1.55));
+}
+
+function SuppsTab() {
+  const [step, setStep] = useState(1); // 1=profile, 2=goal, 3=results
+  const [profile, setProfile] = useState({weight:'',height:'',age:'',gender:'m',activity:'moderate'});
+  const [goal, setGoal] = useState(null);
+  const [aiPlan, setAiPlan] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const isProfileComplete = profile.weight && profile.height && profile.age;
+  const userBMI = isProfileComplete ? bmi(profile.weight, profile.height) : null;
+  const userBMR = isProfileComplete ? bmr(profile.weight, profile.height, profile.age, profile.gender) : null;
+  const userTDEE = userBMR ? tdee(userBMR, profile.activity) : null;
+
+  const supps = goal ? (SUPP_DB[goal.id] || []) : [];
+
+  const getAiPlan = async () => {
+    if (!goal || !isProfileComplete) return;
+    setAiLoading(true); setAiPlan(null);
+    try {
+      const text = await callAPI({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 600,
+        messages: [{
+          role: 'user',
+          content: `Erstelle einen personalisierten Supplement-Tagesplan für:
+- Gewicht: ${profile.weight}kg, Größe: ${profile.height}cm, Alter: ${profile.age} Jahre
+- Geschlecht: ${profile.gender === 'm' ? 'männlich' : 'weiblich'}
+- BMI: ${userBMI}, TDEE: ${userTDEE} kcal
+- Ziel: ${goal.label} ${goal.emoji}
+- Aktivität: ${profile.activity}
+
+Gib einen konkreten Tagesplan mit Uhrzeiten. Max 150 Wörter. Auf Deutsch. Direkt und konkret ohne Floskeln.`
+        }]
+      });
+      setAiPlan(text);
+    } catch(e) {}
+    finally { setAiLoading(false); }
+  };
+
+  const priorityColors = {'MUST HAVE':'#00ff87','EMPFOHLEN':'#1a73e8','OPTIONAL':'#ff9440'};
+
+  return (
+    <div className="sec">
+      {/* STEP 1: Profile */}
+      <div style={{background:'#0d0d0d',border:'1px solid #1a1a1a',borderRadius:20,padding:18,marginBottom:14}}>
+        <div style={{fontSize:10,letterSpacing:3,textTransform:'uppercase',color:'#333',fontWeight:700,marginBottom:14}}>Dein Profil</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+          {[
+            ['Gewicht','weight','kg','number'],
+            ['Größe','height','cm','number'],
+            ['Alter','age','Jahre','number'],
+          ].map(([label,key,unit,type])=>(
+            <div key={key} style={key==='age'?{gridColumn:'1/-1'}:{}}>
+              <div style={{fontSize:11,color:'#444',marginBottom:5,letterSpacing:.5}}>{label}</div>
+              <div style={{display:'flex',alignItems:'center',background:'#111',border:'1px solid #1e1e1e',borderRadius:10,overflow:'hidden'}}>
+                <input type={type} value={profile[key]} onChange={e=>setProfile(p=>({...p,[key]:e.target.value}))}
+                  placeholder="0" style={{flex:1,background:'transparent',border:'none',color:'#fff',padding:'10px 12px',fontFamily:'Bebas Neue',fontSize:20,outline:'none',letterSpacing:1}} />
+                <span style={{padding:'0 12px',fontSize:11,color:'#444'}}>{unit}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* Gender */}
+        <div style={{marginBottom:10}}>
+          <div style={{fontSize:11,color:'#444',marginBottom:5}}>Geschlecht</div>
+          <div style={{display:'flex',gap:8}}>
+            {[['m','♂ Männlich'],['f','♀ Weiblich']].map(([val,lbl])=>(
+              <button key={val} onClick={()=>setProfile(p=>({...p,gender:val}))} style={{flex:1,background:profile.gender===val?'linear-gradient(135deg,#00ff87,#00cc6a)':'#111',border:'1px solid '+(profile.gender===val?'#00ff87':'#1e1e1e'),borderRadius:10,padding:'10px',color:profile.gender===val?'#000':'#555',fontFamily:'Inter',fontSize:13,fontWeight:600,cursor:'pointer',transition:'all .2s'}}>
+                {lbl}
+              </button>
+            ))}
+          </div>
+        </div>
+        {/* Activity */}
+        <div>
+          <div style={{fontSize:11,color:'#444',marginBottom:5}}>Aktivitätslevel</div>
+          <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+            {[['sedentary','🪑 Sitzend'],['light','🚶 Leicht'],['moderate','🏃 Moderat'],['active','💪 Aktiv'],['veryactive','⚡ Sehr aktiv']].map(([val,lbl])=>(
+              <button key={val} onClick={()=>setProfile(p=>({...p,activity:val}))} style={{background:profile.activity===val?'#00ff87':'#111',border:'1px solid '+(profile.activity===val?'#00ff87':'#1e1e1e'),borderRadius:8,padding:'6px 10px',color:profile.activity===val?'#000':'#555',fontFamily:'Inter',fontSize:11,fontWeight:600,cursor:'pointer',transition:'all .2s'}}>
+                {lbl}
+              </button>
+            ))}
+          </div>
+        </div>
+        {/* Stats */}
+        {isProfileComplete && (
+          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginTop:14,padding:'12px',background:'#111',borderRadius:12}}>
+            {[['BMI',userBMI,Number(userBMI)<18.5?'Untergewicht':Number(userBMI)<25?'Normal':Number(userBMI)<30?'Übergewicht':'Adipositas'],
+              ['Grundumsatz',userBMR+' kcal','Ruhekalorien'],
+              ['TDEE',userTDEE+' kcal','Tagesbedarf']].map(([l,v,s])=>(
+              <div key={l} style={{textAlign:'center'}}>
+                <div style={{fontFamily:'Bebas Neue',fontSize:20,color:'#00ff87'}}>{v}</div>
+                <div style={{fontSize:9,color:'#333',letterSpacing:1,textTransform:'uppercase'}}>{l}</div>
+                <div style={{fontSize:9,color:'#555',marginTop:2}}>{s}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* STEP 2: Goal Selection */}
+      <div style={{fontSize:10,letterSpacing:3,textTransform:'uppercase',color:'#333',fontWeight:700,marginBottom:12}}>Dein Ziel</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
+        {GOALS.map(g=>(
+          <button key={g.id} onClick={()=>setGoal(g)} style={{background:goal?.id===g.id?'#0a1a0f':'#0d0d0d',border:'1px solid '+(goal?.id===g.id?'#00ff87':'#1a1a1a'),borderRadius:16,padding:'14px 12px',cursor:'pointer',textAlign:'left',transition:'all .2s',transform:goal?.id===g.id?'translateY(-1px)':'none',boxShadow:goal?.id===g.id?'0 4px 20px #00ff8720':'none'}}>
+            <div style={{fontSize:24,marginBottom:4}}>{g.emoji}</div>
+            <div style={{fontFamily:'Bebas Neue',fontSize:16,color:'#fff',letterSpacing:.5}}>{g.label}</div>
+            <div style={{fontSize:11,color:'#444',marginTop:2}}>{g.desc}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* STEP 3: Supplement List */}
+      {goal && (
+        <>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+            <div style={{fontSize:10,letterSpacing:3,textTransform:'uppercase',color:'#333',fontWeight:700}}>Empfehlungen für {goal.label}</div>
+            <div style={{display:'flex',gap:6}}>
+              {[['#00ff87','MUST HAVE'],['#1a73e8','EMPFOHLEN'],['#ff9440','OPTIONAL']].map(([c,l])=>(
+                <span key={l} style={{fontSize:9,color:c,background:c+'15',border:'1px solid '+c+'40',borderRadius:4,padding:'2px 6px',fontWeight:700}}>{l}</span>
+              ))}
+            </div>
+          </div>
+
+          {supps.map((s,i)=>(
+            <div key={i} style={{background:'#0d0d0d',border:'1px solid #1a1a1a',borderRadius:16,padding:14,marginBottom:10,animation:'fadeUp .3s ease'}}>
+              <div style={{display:'flex',alignItems:'flex-start',gap:12}}>
+                <div style={{width:44,height:44,background:s.color+'15',border:'1px solid '+s.color+'40',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0}}>{s.emoji}</div>
+                <div style={{flex:1}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+                    <div style={{fontFamily:'Bebas Neue',fontSize:18,color:'#fff',letterSpacing:.5}}>{s.name}</div>
+                    <span style={{fontSize:9,color:s.color,background:s.color+'15',border:'1px solid '+s.color+'40',borderRadius:4,padding:'2px 6px',fontWeight:700,flexShrink:0}}>{s.priority}</span>
+                  </div>
+                  <div style={{fontSize:11,color:'#777',lineHeight:1.5,marginBottom:8}}>{s.why}</div>
+                  <div style={{display:'flex',gap:8}}>
+                    <div style={{background:'#111',border:'1px solid #1e1e1e',borderRadius:8,padding:'5px 10px'}}>
+                      <div style={{fontSize:9,color:'#444',letterSpacing:1,textTransform:'uppercase'}}>Dosis</div>
+                      <div style={{fontSize:12,color:'#ddd',fontWeight:600,marginTop:1}}>{s.dose}</div>
+                    </div>
+                    <div style={{background:'#111',border:'1px solid #1e1e1e',borderRadius:8,padding:'5px 10px'}}>
+                      <div style={{fontSize:9,color:'#444',letterSpacing:1,textTransform:'uppercase'}}>Wann</div>
+                      <div style={{fontSize:12,color:'#ddd',fontWeight:600,marginTop:1}}>{s.timing}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* AI Personal Plan */}
+          <div style={{background:'#0a1a0f',border:'1px solid #00ff8430',borderRadius:16,padding:16,marginTop:4}}>
+            <div style={{fontSize:10,letterSpacing:2,textTransform:'uppercase',color:'#00ff87',fontWeight:700,marginBottom:8}}>✨ KI-Tagesplan für dich</div>
+            {!aiPlan && !aiLoading && (
+              <button onClick={getAiPlan} disabled={!isProfileComplete} style={{width:'100%',background:isProfileComplete?'linear-gradient(135deg,#00ff87,#00cc6a)':'#1a1a1a',border:'none',borderRadius:12,padding:'14px',color:isProfileComplete?'#000':'#555',fontFamily:'Bebas Neue',fontSize:18,letterSpacing:2,cursor:isProfileComplete?'pointer':'not-allowed',transition:'all .2s'}}>
+                {isProfileComplete?'PERSONALISIERTEN PLAN GENERIEREN':'ERST PROFIL AUSFÜLLEN'}
+              </button>
+            )}
+            {aiLoading && <div style={{textAlign:'center',padding:16,color:'#00ff87',fontSize:13}}>⏳ KI erstellt deinen Plan…</div>}
+            {aiPlan && (
+              <>
+                <div style={{fontSize:13,color:'#bbb',lineHeight:1.7,whiteSpace:'pre-wrap'}}>{aiPlan}</div>
+                <button onClick={()=>{setAiPlan(null);getAiPlan();}} style={{marginTop:12,background:'transparent',border:'1px solid #00ff8440',borderRadius:10,padding:'8px 14px',color:'#00ff87',fontFamily:'Inter',fontSize:12,cursor:'pointer'}}>↻ Neu generieren</button>
+              </>
+            )}
+          </div>
+
+          <div style={{marginTop:12,padding:'12px 14px',background:'#0d0d0d',border:'1px solid #1a1a1a',borderRadius:12,fontSize:11,color:'#333',lineHeight:1.6}}>
+            ⚠️ Diese Empfehlungen sind allgemeine Richtwerte. Bei gesundheitlichen Problemen oder Medikamenten bitte einen Arzt konsultieren.
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── Main App ──────────────────────────────────────────────────────────
 export default function App() {
   const [tab, setTab] = useState('scan');
@@ -1127,6 +1378,7 @@ Schwierigkeit: Einfach/Mittel/Schwer
             🛒 Warenkorb {cart.length>0&&<span className="tab-badge">{cart.length}</span>}
           </button>
           <button className={`tab${tab==='tracker'?' on':''}`} onClick={()=>setTab('tracker')}>📊 Tracker</button>
+          <button className={`tab${tab==='supps'?' on':''}`} onClick={()=>setTab('supps')}>💊 Supps</button>
         </div>
 
         {tab==='scan' && (
@@ -1195,6 +1447,7 @@ Schwierigkeit: Einfach/Mittel/Schwer
 
         {tab==='cart' && <CartTab cart={cart} setCart={setCart} />}
         {tab==='tracker' && <TrackerTab weekData={weekData} setWeekData={setWeekData} activities={activities} setActivities={setActivities} />}
+        {tab==='supps' && <SuppsTab />}
       </div>
     </>
   );

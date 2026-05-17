@@ -271,7 +271,11 @@ function ReweSheet({ item, onClose }) {
 
   const openRewe = (productName) => {
     const q = productName || query;
-    window.open('https://shop.rewe.de/products?search=' + encodeURIComponent(q), '_blank');
+    window.open('https://shop.rewe.de/suche/?search=' + encodeURIComponent(q), '_blank');
+  };
+
+  const openReweAll = () => {
+    window.open('https://shop.rewe.de/suche/?search=' + encodeURIComponent(query), '_blank');
   };
 
   return (
@@ -297,7 +301,7 @@ function ReweSheet({ item, onClose }) {
             </div>
           </div>
         ))}
-        <button className="rewe-order-btn" onClick={() => openRewe()}>
+        <button className="rewe-order-btn" onClick={openReweAll}>
           ALLE BEI REWE ANSEHEN
         </button>
       </div>

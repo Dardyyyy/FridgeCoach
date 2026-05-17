@@ -279,13 +279,50 @@ const REWE_DB = {
   "garnelen":    [{name:"Garnelen TK",brand:"REWE",price:"4,99 €",unit:"500g",emoji:"🦐"},{name:"Bio Garnelen",brand:"followfish",price:"6,99 €",unit:"300g",emoji:"🦐"},{name:"Riesengarnelen",brand:"REWE",price:"5,49 €",unit:"400g",emoji:"🦐"}],
   "rinderhack":  [{name:"Rinderhackfleisch",brand:"REWE",price:"3,99 €",unit:"500g",emoji:"🥩"},{name:"Bio Rinderhack",brand:"REWE Bio",price:"5,99 €",unit:"400g",emoji:"🥩"},{name:"Hackfleisch gemischt",brand:"REWE",price:"2,99 €",unit:"500g",emoji:"🥩"}],
   "default":     [{name:"Bei Rewe suchen",brand:"Rewe Lieferservice",price:"ab 0,99 €",unit:"",emoji:"🛒"}],
+  "wraps":       [{name:"Vollkorn Wraps",brand:"REWE",price:"1,49 €",unit:"6 Stk",emoji:"🌯"},{name:"Weizen Tortillas",brand:"Old El Paso",price:"1,99 €",unit:"8 Stk",emoji:"🌯"},{name:"Bio Dinkel Wraps",brand:"Alnatura",price:"2,29 €",unit:"6 Stk",emoji:"🌯"}],
+  "tomaten":     [{name:"Cherrytomaten",brand:"REWE",price:"1,29 €",unit:"250g",emoji:"🍅"},{name:"Bio Rispentomaten",brand:"REWE Bio",price:"1,49 €",unit:"500g",emoji:"🍅"},{name:"Cherrytomaten",brand:"REWE Bio",price:"1,79 €",unit:"250g",emoji:"🍅"}],
+  "milch":       [{name:"Vollmilch 3,5%",brand:"REWE",price:"0,99 €",unit:"1L",emoji:"🥛"},{name:"Fettarme Milch",brand:"REWE",price:"0,89 €",unit:"1L",emoji:"🥛"},{name:"Bio Vollmilch",brand:"REWE Bio",price:"1,29 €",unit:"1L",emoji:"🥛"}],
+  "olivenöl":    [{name:"Olivenöl extra vergine",brand:"REWE",price:"3,99 €",unit:"750ml",emoji:"🫒"},{name:"Bio Olivenöl",brand:"Alnatura",price:"5,49 €",unit:"500ml",emoji:"🫒"},{name:"Olivenöl",brand:"Bertolli",price:"4,49 €",unit:"750ml",emoji:"🫒"}],
+  "sojasoße":    [{name:"Sojasoße",brand:"Kikkoman",price:"1,99 €",unit:"150ml",emoji:"🍶"},{name:"Sojasoße",brand:"REWE",price:"0,99 €",unit:"250ml",emoji:"🍶"},{name:"Bio Tamari",brand:"Alnatura",price:"2,49 €",unit:"250ml",emoji:"🍶"}],
+  "gurke":       [{name:"Salatgurke",brand:"REWE",price:"0,69 €",unit:"Stück",emoji:"🥒"},{name:"Bio Salatgurke",brand:"REWE Bio",price:"1,29 €",unit:"Stück",emoji:"🥒"},{name:"Mini Gurken",brand:"REWE",price:"1,49 €",unit:"400g",emoji:"🥒"}],
+  "paprika":     [{name:"Paprika rot",brand:"REWE",price:"0,99 €",unit:"Stück",emoji:"🫑"},{name:"Bio Paprika 3-farbig",brand:"REWE Bio",price:"2,49 €",unit:"3 Stk",emoji:"🫑"},{name:"Paprika Mix",brand:"REWE",price:"1,99 €",unit:"500g",emoji:"🫑"}],
+  "zwiebel":     [{name:"Zwiebeln",brand:"REWE",price:"0,99 €",unit:"1kg",emoji:"🧅"},{name:"Rote Zwiebeln",brand:"REWE",price:"1,29 €",unit:"500g",emoji:"🧅"},{name:"Bio Zwiebeln",brand:"REWE Bio",price:"1,49 €",unit:"750g",emoji:"🧅"}],
+  "knoblauch":   [{name:"Knoblauch",brand:"REWE",price:"0,49 €",unit:"Knolle",emoji:"🧄"},{name:"Knoblauch 3er",brand:"REWE",price:"0,99 €",unit:"3 Knollen",emoji:"🧄"},{name:"Bio Knoblauch",brand:"REWE Bio",price:"0,79 €",unit:"Knolle",emoji:"🧄"}],
+  "haferflocken": [{name:"Zarte Haferflocken",brand:"REWE",price:"0,79 €",unit:"500g",emoji:"🌾"},{name:"Bio Haferflocken",brand:"Alnatura",price:"1,49 €",unit:"500g",emoji:"🌾"},{name:"Kernige Haferflocken",brand:"Kölln",price:"1,99 €",unit:"500g",emoji:"🌾"}],
 };
 
 function getReweProducts(item) {
-  const q = item.toLowerCase().replace(/\d+g|\d+ml|\d+x|\d+\s/g, '').trim();
+  const q = item.toLowerCase()
+    .replace(/\d+er|\d+g|\d+ml|\d+x|\d+\s/g, '')
+    .replace(/pack|packung|netz|bund|dose|glas|beutel|stück|stk/g, '')
+    .trim();
+
+  // Direct key match
   for (const [key, products] of Object.entries(REWE_DB)) {
-    if (q.includes(key) || key.includes(q.split(' ')[0])) return products;
+    if (key === 'default') continue;
+    if (q.includes(key)) return products;
   }
+  // Partial word match
+  const words = q.split(/\s+/).filter(w => w.length > 3);
+  for (const word of words) {
+    for (const [key, products] of Object.entries(REWE_DB)) {
+      if (key === 'default') continue;
+      if (key.includes(word) || word.includes(key)) return products;
+    }
+  }
+  // Keyword aliases
+  if (q.includes('wrap') || q.includes('tortilla')) return REWE_DB['wraps'];
+  if (q.includes('tomate') || q.includes('cherry')) return REWE_DB['tomaten'];
+  if (q.includes('milch') || q.includes('milk')) return REWE_DB['milch'];
+  if (q.includes('käse') || q.includes('cheese')) return REWE_DB['fetakäse'];
+  if (q.includes('öl') || q.includes('oil')) return REWE_DB['olivenöl'];
+  if (q.includes('soß') || q.includes('sauce')) return REWE_DB['sojasoße'];
+  if (q.includes('nudel') || q.includes('penne') || q.includes('spaghetti')) return REWE_DB['pasta'];
+  if (q.includes('hähnchen') || q.includes('chicken') || q.includes('hühnchen')) return REWE_DB['hähnchen'];
+  if (q.includes('joghurt') || q.includes('yogurt') || q.includes('quark')) return REWE_DB['joghurt'];
+  if (q.includes('fisch') || q.includes('thun')) return REWE_DB['thunfisch'];
+  if (q.includes('hack') || q.includes('beef') || q.includes('rind')) return REWE_DB['rinderhack'];
+
   return REWE_DB.default;
 }
 
@@ -295,7 +332,7 @@ function ReweSheet({ item, onClose }) {
   const products = getReweProducts(item);
 
   const openRewe = (productName) => {
-    window.open('https://shop.rewe.de/suche/?search=' + encodeURIComponent(productName || query), '_blank');
+    window.open('https://shop.rewe.de/?search=' + encodeURIComponent(productName || query), '_blank');
   };
 
   return (

@@ -191,8 +191,8 @@ body{background:#050505;color:#f0f0f0;font-family:'Inter',sans-serif;min-height:
 .aiprot{font-size:12px;color:#00ff87;font-weight:600;margin-top:5px}
 .chev{color:#2a2a2a;font-size:12px;padding-right:14px;transition:transform .25s}
 .airow.on .chev{transform:rotate(180deg);color:#00ff87}
-.rewe-btn{width:100%;margin-top:14px;background:linear-gradient(135deg,#cc071e,#a30018);border:none;border-radius:14px;padding:14px 16px;color:#fff;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;box-shadow:0 4px 16px rgba(204,7,30,.3)}
-.rewe-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(204,7,30,.4)}
+.rewe-btn{width:100%;margin-top:14px;background:linear-gradient(135deg,#1a73e8,#1557b0);border:none;border-radius:14px;padding:14px 16px;color:#fff;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;box-shadow:0 4px 16px rgba(26,115,232,.3)}
+.rewe-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(26,115,232,.5)}
 .rewe-mini{background:#1a0a0a;border:1px solid #2a1010;border-radius:8px;cursor:pointer;padding:5px 9px;display:flex;align-items:center;color:#cc071e;font-size:10px;font-weight:700;font-family:'Inter',sans-serif;transition:all .2s;flex-shrink:0;letter-spacing:.3px}
 .rewe-mini:hover{background:#cc071e;color:#fff}
 .rewe-sheet{position:fixed;inset:0;z-index:999;display:flex;flex-direction:column;justify-content:flex-end}
@@ -211,8 +211,8 @@ body{background:#050505;color:#f0f0f0;font-family:'Inter',sans-serif;min-height:
 .rewe-product-brand{font-size:11px;color:#444;margin-top:2px}
 .rewe-product-price{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#cc071e;letter-spacing:.5px;flex-shrink:0}
 .rewe-product-unit{font-size:10px;color:#333;text-align:right;margin-top:2px}
-.rewe-order-btn{width:100%;margin-top:4px;background:linear-gradient(135deg,#cc071e,#a30018);border:none;border-radius:14px;padding:15px;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;cursor:pointer;transition:all .2s;box-shadow:0 4px 16px rgba(204,7,30,.3)}
-.rewe-order-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(204,7,30,.5)}
+.rewe-order-btn{width:100%;margin-top:4px;background:linear-gradient(135deg,#1a73e8,#1557b0);border:none;border-radius:14px;padding:15px;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;cursor:pointer;transition:all .2s;box-shadow:0 4px 16px rgba(26,115,232,.3)}
+.rewe-order-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(26,115,232,.5)}
 .rewe-loading{text-align:center;padding:24px;color:#444;font-size:13px}
 `;
 
@@ -332,7 +332,7 @@ function ReweSheet({ item, onClose }) {
   const products = getReweProducts(item);
 
   const openRewe = (productName) => {
-    window.open('https://shop.rewe.de/?search=' + encodeURIComponent(productName || query), '_blank');
+    window.open('https://www.google.com/search?q=' + encodeURIComponent((productName || query) + ' kaufen Supermarkt') + '&tbm=shop', '_blank');
   };
 
   return (
@@ -340,10 +340,10 @@ function ReweSheet({ item, onClose }) {
       <div className="rewe-sheet-bg" onClick={onClose} />
       <div className="rewe-sheet-box">
         <div className="rewe-sheet-hdr">
-          <div className="rewe-sheet-title">🔴 {query}</div>
+          <div className="rewe-sheet-title">🛒 {query}</div>
           <button className="rewe-sheet-close" onClick={onClose}>✕</button>
         </div>
-        <div className="rewe-sheet-sub">Preisvergleich · verschiedene Hersteller</div>
+        <div className="rewe-sheet-sub">Preisvergleich · alle Supermärkte</div>
         {products.map((p, i) => (
           <div key={i} className="rewe-product" onClick={() => openRewe(p.name)}>
             <div className="rewe-product-img">{p.emoji}</div>
@@ -353,12 +353,12 @@ function ReweSheet({ item, onClose }) {
             </div>
             <div style={{textAlign:'right'}}>
               <div className="rewe-product-price">{p.price}</div>
-              <div className="rewe-product-unit">→ Rewe</div>
+              <div className="rewe-product-unit">→ Shop</div>
             </div>
           </div>
         ))}
         <button className="rewe-order-btn" onClick={() => openRewe(query)}>
-          BEI REWE KAUFEN
+          PREISE VERGLEICHEN →
         </button>
       </div>
     </div>
@@ -410,12 +410,12 @@ function RecipeView({ r }) {
             <div className="shitem" key={i}>
               <div className={`shcheck${checked[i]?' on':''}`} onClick={() => toggle(i)}>{checked[i]?'✓':''}</div>
               <div className={`shname${checked[i]?' done':''}`} onClick={() => toggle(i)}>{item}</div>
-              <button className="rewe-mini" onClick={() => setReweItem(item)}>REWE</button>
+              <button className="rewe-mini" onClick={() => setReweItem(item)}>🛒</button>
             </div>
           ))}
           <button className="rewe-btn" onClick={() => setReweItem(list[0])}>
             <span style={{fontSize:16}}>🔴</span>
-            <span>Preise & Varianten bei Rewe</span>
+            <span>Preise vergleichen · alle Shops</span>
             <span style={{fontSize:11,opacity:.6}}>→</span>
           </button>
           {reweItem && <ReweSheet item={reweItem} onClose={() => setReweItem(null)} />}
